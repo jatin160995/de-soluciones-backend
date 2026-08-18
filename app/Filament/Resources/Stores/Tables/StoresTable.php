@@ -17,31 +17,35 @@ class StoresTable
     {
         return $table
             ->columns([
-                TextColumn::make('owner_user_id')
+                TextColumn::make('owner_user_id')->label('Propietario')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('name')
+                TextColumn::make('name')->label('Nombre')
                     ->searchable(),
-                TextColumn::make('slug')
+                TextColumn::make('slug')->label('Slug')
                     ->searchable(),
-                TextColumn::make('logo_path')
+                TextColumn::make('logo_path')->label('Logo')
                     ->searchable(),
-                TextColumn::make('whatsapp_number')
+                TextColumn::make('whatsapp_number')->label('WhatsApp')
                     ->searchable(),
-                TextColumn::make('status')
-                    ->badge(),
-                TextColumn::make('commission_rate')
+                TextColumn::make('status')->label('Estado')
+                    ->badge()->formatStateUsing(fn(string $state): string => match ($state) {
+                        'active' => 'Activo',
+                        'inactive' => 'Inactivo',
+                        'suspended' => 'Suspendido',
+                    }),
+                TextColumn::make('commission_rate')->label('Comisión')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('created_at')
+                TextColumn::make('created_at')->label('Creado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
+                TextColumn::make('updated_at')->label('Actualizado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')->label('Eliminado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

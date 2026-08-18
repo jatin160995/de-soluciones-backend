@@ -9,11 +9,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Models\Concerns\HasSeoMeta;
 
 class Store extends Model implements HasMedia
 {
+    use HasSeoMeta;
     use SoftDeletes;
     use InteractsWithMedia;
+
 
     protected $fillable = [
         'owner_user_id',

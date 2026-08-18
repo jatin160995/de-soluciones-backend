@@ -20,24 +20,24 @@ class CategoriesTable
                     ->collection('image')
                     ->label('')
                     ->circular(),
-                TextColumn::make('parent.name')
+                TextColumn::make('parent.name')->label('Categoría padre')
                     ->searchable(),
-                TextColumn::make('type')
+                TextColumn::make('type')->label('Tipo')
                     ->badge(),
-                TextColumn::make('name')
+                TextColumn::make('name')->label('Nombre')
                     ->searchable(),
-                TextColumn::make('slug')
+                TextColumn::make('slug')->label('Slug')
                     ->searchable(),
-                TextColumn::make('sort_order')
+                TextColumn::make('sort_order')->label('Orden')
                     ->numeric()
                     ->sortable(),
-                IconColumn::make('is_active')
+                IconColumn::make('is_active')->label('Activo')
                     ->boolean(),
-                TextColumn::make('created_at')
+                TextColumn::make('created_at')->label('Creado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
+                TextColumn::make('updated_at')->label('Actualizado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

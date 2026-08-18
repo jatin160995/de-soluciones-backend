@@ -18,44 +18,57 @@ class VariantsRelationManager extends RelationManager
 {
     protected static string $relationship = 'variants';
 
+    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    {
+        return 'Variantes';
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('sku')
+                ->label('SKU')
                 ->required()
                 ->unique(table: 'product_variants', ignoreRecord: true),
 
             TextInput::make('price')
+                ->label('Precio')
                 ->numeric()
-                ->prefix('L.')
+                ->prefix(config('store.currency_symbol'))
                 ->required(),
-                TextInput::make('discounted_price')
-                    ->numeric()
-                    ->prefix('L.')
-                    ->nullable()
-                    ->helperText('Leave blank if not on sale.')
-                    ->lt('price')
-                    ->validationMessages([
-                        'lt' => 'Discounted price must be lower than price.',
-                    ]),
+
+            TextInput::make('discounted_price')
+                ->label('Precio con descuento')
+                ->numeric()
+                ->prefix(config('store.currency_symbol'))
+                ->nullable()
+                ->helperText('Déjalo en blanco si no está en oferta.')
+                ->lt('price')
+                ->validationMessages([
+                    'lt' => 'El precio con descuento debe ser menor que el precio.',
+                ]),
 
             TextInput::make('stock_quantity')
+                ->label('Cantidad en stock')
                 ->numeric()
                 ->default(0)
                 ->required()
-                ->helperText('Changes here are logged automatically to inventory_movements.'),
+                ->helperText('Los cambios aquí se registran automáticamente en inventory_movements.'),
 
-            TextInput::make('size'),
+            TextInput::make('size')
+                ->label('Talla'),
 
-            TextInput::make('color'),
+            TextInput::make('color')
+                ->label('Color'),
 
             KeyValue::make('extra_attributes')
-                ->label('Other attributes')
-                ->keyLabel('Attribute')
-                ->valueLabel('Value')
-                ->helperText('e.g. material, weight'),
+                ->label('Otros atributos')
+                ->keyLabel('Atributo')
+                ->valueLabel('Valor')
+                ->helperText('Ej: material, peso'),
 
             Toggle::make('is_active')
+                ->label('Activo')
                 ->default(true),
         ]);
     }
@@ -65,20 +78,20 @@ class VariantsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('sku')
             ->columns([
-                TextColumn::make('sku')->searchable(),
-                TextColumn::make('size'),
-                TextColumn::make('color'),
-                TextColumn::make('price')->money('HNL'),
-                TextColumn::make('discounted_price')->money('HNL')->placeholder('—'),
+                TextColumn::make('sku')->label('SKU')->searchable(),
+                TextColumn::make('size')->label('Talla'),
+                TextColumn::make('color')->label('Color'),
+                TextColumn::make('price')->label('Precio')->money(config('store.currency')),
+                TextColumn::make('discounted_price')->label('Precio con descuento')->money(config('store.currency'))->placeholder('—'),
                 TextColumn::make('stock_quantity')->label('Stock'),
-                IconColumn::make('is_active')->boolean(),
+                IconColumn::make('is_active')->label('Activo')->boolean(),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()->label('Nueva variante'),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('Editar'),
+                DeleteAction::make()->label('Eliminar'),
             ]);
     }
 }

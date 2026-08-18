@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Models\Concerns\HasSeoMeta;
 
 class Category extends Model implements HasMedia
 {
+    use HasSeoMeta;
     use InteractsWithMedia;
 
     protected $fillable = [

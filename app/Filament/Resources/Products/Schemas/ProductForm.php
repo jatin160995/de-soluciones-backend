@@ -11,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
+use App\Filament\Schemas\Components\SeoMetaSection;
 
 class ProductForm
 {
@@ -18,63 +19,71 @@ class ProductForm
     {
         return $schema->components([
 
-            Section::make('Product details')
+            Section::make('Detalles del producto')
                 ->columns(2)
                 ->schema([
                     Select::make('store_id')
-                        ->label('Store')
+                        ->label('Tienda')
                         ->options(Store::pluck('name', 'id'))
-                        ->default(fn () => Store::first()?->id)
+                        ->default(fn() => Store::first()?->id)
                         ->required()
                         ->searchable(),
 
                     Select::make('category_id')
-                        ->label('Category')
-                        ->relationship('category', 'name', fn ($query) => $query->where('type', 'product'))
+                        ->label('Categoría')
+                        ->relationship('category', 'name', fn($query) => $query->where('type', 'product'))
                         ->searchable()
                         ->preload(),
 
                     TextInput::make('name')
+                        ->label('Nombre')
                         ->required()
                         ->maxLength(180)
                         ->live(onBlur: true)
-                        ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
+                        ->afterStateUpdated(fn($state, callable $set) => $set('slug', Str::slug($state))),
 
                     TextInput::make('slug')
+                        ->label('Slug')
                         ->required()
                         ->maxLength(200)
                         ->unique(ignoreRecord: true),
 
                     Textarea::make('description')
+                        ->label('Descripción')
                         ->columnSpanFull(),
 
                     TextInput::make('base_price')
-                        ->label('Base price (HNL)')
+                        ->label('Precio base (' . config('store.currency') . ')')
                         ->numeric()
-                        ->prefix('L.')
+                        ->prefix(config('store.currency_symbol'))
                         ->required(),
-                        TextInput::make('discounted_price')
-                            ->label('Discounted price (HNL)')
-                            ->numeric()
-                            ->prefix('L.')
-                            ->nullable()
-                            ->helperText('Leave blank if not on sale.')
-                            ->lt('base_price')
-                            ->validationMessages([
-                                'lt' => 'Discounted price must be lower than the base price.',
-                            ]),
+
+                    TextInput::make('discounted_price')
+                        ->label('Precio con descuento (' . config('store.currency') . ')')
+                        ->numeric()
+                        ->prefix(config('store.currency_symbol'))
+                        ->nullable()
+                        ->helperText('Déjalo en blanco si no está en oferta.')
+                        ->lt('base_price')
+                        ->validationMessages([
+                            'lt' => 'El precio con descuento debe ser menor que el precio base.',
+                        ]),
 
                     Select::make('status')
-                        ->options(['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive'])
+                        ->label('Estado')
+                        ->options(['draft' => 'Borrador', 'active' => 'Activo', 'inactive' => 'Inactivo'])
                         ->default('draft')
                         ->required(),
 
-                    Toggle::make('is_featured'),
+
+                    Toggle::make('is_featured')
+                        ->label('Destacado'),
                 ]),
 
-            Section::make('Images')
+            Section::make('Imágenes')
                 ->schema([
                     SpatieMediaLibraryFileUpload::make('images')
+                        ->label('Imágenes')
                         ->collection('images')
                         ->multiple()
                         ->reorderable()
@@ -82,7 +91,9 @@ class ProductForm
                         ->panelLayout('grid')
                         ->imageEditor()
                         ->maxSize(5120),
+                    SeoMetaSection::make(),
                 ]),
+
         ]);
     }
 }

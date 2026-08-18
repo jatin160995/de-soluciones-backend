@@ -14,33 +14,38 @@ class UsersTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('name')->label('Nombre')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label('Correo electrónico')
                     ->searchable(),
-                TextColumn::make('email_verified_at')
+                TextColumn::make('email_verified_at')->label('Correo verificado el')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('phone')
+                TextColumn::make('phone')->label('Teléfono')
                     ->searchable(),
-                TextColumn::make('phone_verified_at')
+                TextColumn::make('phone_verified_at')->label('Teléfono verificado el')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('status')
-                    ->badge(),
-                TextColumn::make('roles.name')
+                TextColumn::make('status')->label('Estado')
+                    ->badge()
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'active' => 'Activo',
+                        'inactive' => 'Inactivo',
+                        'banned' => 'Bloqueado',
+                    }),
+                TextColumn::make('roles.name')->label('Roles')
                     ->badge()
                     ->separator(','),
-                TextColumn::make('created_at')
+                TextColumn::make('created_at')->label('Creado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
+                TextColumn::make('updated_at')->label('Actualizado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')->label('Eliminado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

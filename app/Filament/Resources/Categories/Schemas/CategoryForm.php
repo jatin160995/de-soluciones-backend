@@ -9,6 +9,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
+use App\Filament\Schemas\Components\SeoMetaSection;
 
 class CategoryForm
 {
@@ -17,35 +18,36 @@ class CategoryForm
         return $schema
             ->components([
                 Select::make('parent_id')
-                    ->label('Parent Category')
+                    ->label('Categoría padre')
                     ->relationship(
                         'parent',
                         'name',
-                        modifyQueryUsing: fn ($query, $record) => $record
+                        modifyQueryUsing: fn($query, $record) => $record
                             ? $query->whereKeyNot($record->id)
                             : $query,
                     )
                     ->searchable()
                     ->preload()
                     ->default(null),
-                Hidden::make('type')
+                Hidden::make('type')->label('Nombre')
                     ->default('product'),
                 TextInput::make('name')
                     ->required()
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
-                TextInput::make('slug')
+                    ->afterStateUpdated(fn($state, callable $set) => $set('slug', Str::slug($state))),
+                TextInput::make('slug')->label('Slug')
                     ->required()
                     ->unique(ignoreRecord: true),
-                SpatieMediaLibraryFileUpload::make('image')
+                SpatieMediaLibraryFileUpload::make('image')->label('Imagen')
                     ->collection('image')
                     ->image()
                     ->imageEditor(),
-                TextInput::make('sort_order')
+                SeoMetaSection::make(),
+                TextInput::make('sort_order')->label('Orden')
                     ->required()
                     ->numeric()
                     ->default(0),
-                Toggle::make('is_active')
+                Toggle::make('is_active')->label('Activo')
                     ->required()
                     ->default(true),
             ]);

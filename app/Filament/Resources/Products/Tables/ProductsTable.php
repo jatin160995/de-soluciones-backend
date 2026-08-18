@@ -16,39 +16,47 @@ class ProductsTable
                 SpatieMediaLibraryImageColumn::make('images')
                     ->collection('images')
                     ->conversion('thumb')
-                    ->label('Image'),
+                    ->label('Imagen'),
 
                 TextColumn::make('name')
+                    ->label('Nombre')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('store.name')
-                    ->label('Store'),
+                    ->label('Tienda'),
 
                 TextColumn::make('category.name')
-                    ->label('Category'),
+                    ->label('Categoría'),
 
                 TextColumn::make('base_price')
-                    ->label('Price')
-                    ->money('HNL')
+                    ->label('Precio')
+                    ->money(config('store.currency'))
                     ->sortable()
-                    ->description(fn ($record) => $record->discounted_price
-                        ? 'Now: L. ' . number_format($record->discounted_price, 2)
+                    ->description(fn($record) => $record->discounted_price
+                        ? 'Ahora: ' . config('store.currency_symbol') . ' ' . number_format($record->discounted_price, 2)
                         : null),
 
                 TextColumn::make('variants_count')
                     ->counts('variants')
-                    ->label('Variants'),
+                    ->label('Variantes'),
 
                 TextColumn::make('status')
+                    ->label('Estado')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'active' => 'Activo',
+                        'inactive' => 'Inactivo',
+                        'draft' => 'Borrador',
+                    })
+                    ->color(fn(string $state): string => match ($state) {
                         'active' => 'success',
                         'inactive' => 'gray',
                         'draft' => 'warning',
                     }),
 
                 IconColumn::make('is_featured')
+                    ->label('Destacado')
                     ->boolean(),
             ])
             ->filters([

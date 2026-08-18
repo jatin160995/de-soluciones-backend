@@ -22,6 +22,20 @@ class StoreResource extends Resource
     //protected static bool $shouldRegisterNavigation = false;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    public static function getNavigationLabel(): string
+    {
+        return 'Tiendas';
+    }
+
+    public static function getModelLabel(): string
+    {
+        return 'Tienda';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Tiendas';
+    }
 
     public static function form(Schema $schema): Schema
     {

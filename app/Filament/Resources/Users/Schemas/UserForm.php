@@ -14,30 +14,31 @@ class UserForm
     {
         return $schema
             ->components([
-                TextInput::make('name')
+                TextInput::make('name')->label('Nombre')
                     ->required(),
                 TextInput::make('email')
-                    ->label('Email address')
+                    ->label('Correo electrónico')
                     ->email()
                     ->required(),
-                DateTimePicker::make('email_verified_at'),
+                DateTimePicker::make('email_verified_at')->label('Correo verificado el'),
                 TextInput::make('password')
                     ->password()
-                    ->label(fn (string $operation) => $operation === 'create'
-                        ? 'Password'
-                        : 'New Password (leave blank to keep current)')
-                    ->required(fn (string $operation): bool => $operation === 'create')
-                    ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-                    ->dehydrated(fn ($state) => filled($state)),
-                TextInput::make('phone')
+                    ->label(fn(string $operation) => $operation === 'create'
+                        ? 'Contraseña'
+                        : 'Nueva contraseña (déjala en blanco para mantener la actual)')
+                    ->required(fn(string $operation): bool => $operation === 'create')
+                    ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                    ->dehydrated(fn($state) => filled($state)),
+                TextInput::make('phone')->label('Teléfono')
                     ->tel()
                     ->default(null),
-                DateTimePicker::make('phone_verified_at'),
+                DateTimePicker::make('phone_verified_at')->label('Teléfono verificado el'),
                 Select::make('status')
-                    ->options(['active' => 'Active', 'inactive' => 'Inactive', 'banned' => 'Banned'])
+                    ->label('Estado')
+                    ->options(['active' => 'Activo', 'inactive' => 'Inactivo', 'banned' => 'Bloqueado'])
                     ->default('active')
                     ->required(),
-                Select::make('roles')
+                Select::make('roles')->label('Roles')
                     ->relationship('roles', 'name')
                     ->multiple()
                     ->preload()

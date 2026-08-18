@@ -7,14 +7,23 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use App\Models\Concerns\HasSeoMeta;
 
 class Product extends Model implements HasMedia
 {
+    use HasSeoMeta;
     use SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
-        'store_id', 'category_id', 'name', 'slug',
-        'description', 'base_price', 'discounted_price', 'status', 'is_featured',
+        'store_id',
+        'category_id',
+        'name',
+        'slug',
+        'description',
+        'base_price',
+        'discounted_price',
+        'status',
+        'is_featured',
     ];
 
     protected $casts = [
@@ -23,7 +32,7 @@ class Product extends Model implements HasMedia
         'discounted_price' => 'decimal:2',
     ];
 
-    
+
 
     public function getEffectivePriceAttribute(): string
     {
@@ -36,13 +45,13 @@ class Product extends Model implements HasMedia
     }
 
     public function registerMediaConversions(?Media $media = null): void
-{
-    $this->addMediaConversion('thumb')
-        ->width(300)
-        ->height(300)
-        ->nonQueued()
-        ->performOnCollections('images');
-}
+    {
+        $this->addMediaConversion('thumb')
+            ->width(300)
+            ->height(300)
+            ->nonQueued()
+            ->performOnCollections('images');
+    }
 
     public function store()
     {
