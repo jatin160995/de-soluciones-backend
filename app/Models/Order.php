@@ -20,6 +20,8 @@ class Order extends Model
         'status',
         'subtotal',
         'shipping_cost',
+        'discount_percent',
+        'discount_amount',
         'total',
         'payment_method',
         'customer_name',
@@ -32,8 +34,23 @@ class Order extends Model
         'shipping_snapshot' => 'array',
         'subtotal' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
+        'discount_percent' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'total' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Order $order) {
+            if ($order->isDirty(['subtotal', 'shipping_cost', 'discount_percent'])) {
+                $subtotal = (float) $order->subtotal;
+                $discountPercent = (float) $order->discount_percent;
+
+                $order->discount_amount = round($subtotal * ($discountPercent / 100), 2);
+                $order->total = round($subtotal - $order->discount_amount + (float) $order->shipping_cost, 2);
+            }
+        });
+    }
 
     public function store()
     {

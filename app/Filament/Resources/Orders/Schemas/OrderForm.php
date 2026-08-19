@@ -71,6 +71,29 @@ class OrderForm
                                 ->prefix('L.')
                                 ->disabled()
                                 ->dehydrated(false),
+                            TextInput::make('discount_percent')
+                                ->label('Descuento (%)')
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue(100)
+                                ->suffix('%')
+                                ->default(0)
+                                ->live(onBlur: true)
+                                ->helperText('Para cuando el cliente pide un descuento al confirmar el pedido.')
+                                ->afterStateUpdated(function ($state, $get, $set) {
+                                    $subtotal = (float) $get('subtotal');
+                                    $shipping = (float) $get('shipping_cost');
+                                    $discountAmount = round($subtotal * ((float) $state / 100), 2);
+
+                                    $set('discount_amount', $discountAmount);
+                                    $set('total', round($subtotal - $discountAmount + $shipping, 2));
+                                }),
+                            TextInput::make('discount_amount')
+                                ->label('Monto descontado')
+                                ->numeric()
+                                ->prefix('L.')
+                                ->disabled()
+                                ->dehydrated(false),
                             TextInput::make('shipping_cost')
                                 ->label('Costo de envío')
                                 ->numeric()
