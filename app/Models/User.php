@@ -34,4 +34,13 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function commissionPlan()
+    {
+        return $this->hasOne(AgentCommissionPlan::class);
+    }
+
+    public function commissionStatements()
+    {
+        return $this->hasMany(AgentCommissionStatement::class);
+    }
 }

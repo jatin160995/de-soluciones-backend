@@ -12,6 +12,7 @@
                 'shipped' => 'Enviado',
                 'delivered' => 'Entregado',
                 'cancelled' => 'Cancelado',
+                'returned' => 'Devuelto',
             ];
             $statusColors = [
                 'pending' => 'gray',
@@ -20,6 +21,7 @@
                 'shipped' => 'primary',
                 'delivered' => 'success',
                 'cancelled' => 'danger',
+                'returned' => 'danger',
             ];
             $history = $this->getHistory();
         @endphp

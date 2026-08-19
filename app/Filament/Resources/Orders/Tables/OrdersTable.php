@@ -16,6 +16,8 @@ class OrdersTable
 {
     public static function configure(Table $table): Table
     {
+        $isSalesAgent = auth()->user()?->hasRole('sales_agent') ?? false;
+
         return $table
             ->columns([
                 TextColumn::make('order_number')
@@ -31,6 +33,11 @@ class OrdersTable
                 TextColumn::make('customer_phone')
                     ->label('Teléfono')
                     ->searchable(),
+                TextColumn::make('salesAgent.name')
+                    ->label('Agente')
+                    ->placeholder('Sin asignar')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'primary' : 'gray'),
                 TextColumn::make('status')
                     ->label('Estado')
                     ->badge()
@@ -41,6 +48,7 @@ class OrdersTable
                         'shipped' => 'Enviado',
                         'delivered' => 'Entregado',
                         'cancelled' => 'Cancelado',
+                        'returned' => 'Devuelto',
                         default => $state,
                     })
                     ->color(fn(string $state): string => match ($state) {
@@ -50,6 +58,7 @@ class OrdersTable
                         'shipped' => 'primary',
                         'delivered' => 'success',
                         'cancelled' => 'danger',
+                        'returned' => 'danger',
                         default => 'gray',
                     }),
                 TextColumn::make('payment_method')
@@ -80,6 +89,7 @@ class OrdersTable
                         'shipped' => 'Enviado',
                         'delivered' => 'Entregado',
                         'cancelled' => 'Cancelado',
+                        'returned' => 'Devuelto',
                     ]),
                 SelectFilter::make('store_id')
                     ->relationship('store', 'name')
@@ -92,7 +102,7 @@ class OrdersTable
                 EditAction::make()
                     ->label('Editar'),
             ])
-            ->toolbarActions([
+            ->toolbarActions($isSalesAgent ? [] : [
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->label('Eliminar'),

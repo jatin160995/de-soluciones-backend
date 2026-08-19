@@ -37,9 +37,14 @@ class OrderForm
                             Select::make('sales_agent_id')
                                 ->relationship('salesAgent', 'name')
                                 ->label('Agente de ventas')
-                                ->placeholder('Ninguno')
-                                ->disabled()
-                                ->dehydrated(false),
+                                ->placeholder(fn() => auth()->user()?->hasRole('sales_agent')
+                                    ? 'Sin asignar (se asigna al confirmar)'
+                                    : 'Ninguno')
+                                ->helperText(fn() => auth()->user()?->hasRole('sales_agent')
+                                    ? null
+                                    : 'Un admin puede asignar/reasignar manualmente. Los agentes lo obtienen automáticamente al confirmar el pedido.')
+                                ->disabled(fn() => auth()->user()?->hasRole('sales_agent') ?? false)
+                                ->dehydrated(fn() => ! (auth()->user()?->hasRole('sales_agent') ?? false)),
                             Select::make('address_id')
                                 ->relationship('address', 'line1')
                                 ->label('Dirección de envío')

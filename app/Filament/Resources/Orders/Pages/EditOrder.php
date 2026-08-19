@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\Orders\Pages;
 
 use App\Filament\Resources\Orders\OrderResource;
-use App\Filament\Resources\Orders\Widgets\OrderSummaryWidget;
-use App\Filament\Resources\Orders\Widgets\OrderStatusTimelineWidget;
 use App\Models\Order;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -12,7 +10,9 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\DB;
 
 class EditOrder extends EditRecord
 {
@@ -20,6 +20,8 @@ class EditOrder extends EditRecord
 
     protected function getHeaderActions(): array
     {
+        $isSalesAgent = auth()->user()?->hasRole('sales_agent') ?? false;
+
         return [
             Action::make('changeStatus')
                 ->label('Cambiar Estado')
@@ -34,6 +36,7 @@ class EditOrder extends EditRecord
                             'shipped' => 'Enviado',
                             'delivered' => 'Entregado',
                             'cancelled' => 'Cancelado',
+                            'returned' => 'Devuelto',
                         ])
                         ->default(fn($record) => $record->status)
                         ->required()
@@ -44,25 +47,62 @@ class EditOrder extends EditRecord
                         ->placeholder('Ej. Cliente confirmó dirección por WhatsApp'),
                 ])
                 ->action(function (array $data, Order $record) {
+                    $user = auth()->user();
+                    $newStatus = $data['status'];
+
+                    // A sales agent can't touch an order that already belongs to a different agent.
+                    if (
+                        $user->hasRole('sales_agent')
+                        && $record->sales_agent_id !== null
+                        && $record->sales_agent_id !== $user->id
+                    ) {
+                        Notification::make()
+                            ->title('Este pedido ya pertenece a otro agente')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    // Whoever confirms an unassigned order becomes the agent of record.
+                    // This is an atomic conditional UPDATE (not a read-then-write) so that
+                    // if two agents confirm the same order at the same instant, only one
+                    // of them can actually win the claim - the second one gets rejected below.
+                    if ($newStatus === 'confirmed' && $record->sales_agent_id === null && $user->hasRole('sales_agent')) {
+                        $claimed = DB::table('orders')
+                            ->where('id', $record->id)
+                            ->whereNull('sales_agent_id')
+                            ->update(['sales_agent_id' => $user->id]);
+
+                        if ($claimed === 0) {
+                            Notification::make()
+                                ->title('Este pedido ya fue confirmado por otro agente')
+                                ->body('Alguien más lo tomó justo antes que tú.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        $record->sales_agent_id = $user->id;
+                    }
+
                     $record->statusChangeNote = $data['note'] ?? null;
-                    $record->status = $data['status'];
+                    $record->status = $newStatus;
                     $record->save();
+
+                    Notification::make()
+                        ->title('Estado actualizado')
+                        ->success()
+                        ->send();
                 })
                 ->after(fn() => redirect(request()->header('Referer')))
                 ->modalHeading('Cambiar estado del pedido')
                 ->modalSubmitActionLabel('Guardar'),
 
-            DeleteAction::make(),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
-        ];
-    }
-
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            OrderSummaryWidget::make(['record' => $this->record]),
-            OrderStatusTimelineWidget::make(['record' => $this->record]),
+            DeleteAction::make()->visible(! $isSalesAgent),
+            ForceDeleteAction::make()->visible(! $isSalesAgent),
+            RestoreAction::make()->visible(! $isSalesAgent),
         ];
     }
 }

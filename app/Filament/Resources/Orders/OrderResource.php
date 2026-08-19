@@ -61,4 +61,23 @@ class OrderResource extends Resource
                 SoftDeletingScope::class,
             ]);
     }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        $user = auth()->user();
+
+        // Sales agents only ever see orders that are unclaimed (they can confirm
+        // and claim them) or already assigned to themselves. They never see
+        // orders confirmed by another agent.
+        if ($user && $user->hasRole('sales_agent')) {
+            $query->where(function (Builder $q) use ($user) {
+                $q->whereNull('sales_agent_id')
+                    ->orWhere('sales_agent_id', $user->id);
+            });
+        }
+
+        return $query;
+    }
 }
