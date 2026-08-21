@@ -477,21 +477,19 @@ document.addEventListener('DOMContentLoaded', function () {
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
     loginForm.addEventListener('submit', function (e) {
-      e.preventDefault();
       if (!loginForm.checkValidity()) {
+        e.preventDefault();
         loginForm.classList.add('was-validated');
         const firstInvalid = loginForm.querySelector(':invalid');
         if (firstInvalid) firstInvalid.focus();
         return;
       }
+      // Valid → let the form submit natively to POST /login; the server authenticates.
       const submitBtn = loginForm.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Ingresando...';
       }
-      setTimeout(function () {
-        window.location.href = 'mi-cuenta.html';
-      }, 900);
     });
   }
 
@@ -513,22 +511,20 @@ document.addEventListener('DOMContentLoaded', function () {
     if (regPasswordConfirm) regPasswordConfirm.addEventListener('input', checkPasswordsMatch);
 
     registerForm.addEventListener('submit', function (e) {
-      e.preventDefault();
       checkPasswordsMatch();
       if (!registerForm.checkValidity()) {
+        e.preventDefault();
         registerForm.classList.add('was-validated');
         const firstInvalid = registerForm.querySelector(':invalid');
         if (firstInvalid) firstInvalid.focus();
         return;
       }
+      // Valid → let the form submit natively to POST /registro; the server creates the account.
       const submitBtn = registerForm.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Creando cuenta...';
       }
-      setTimeout(function () {
-        window.location.href = 'mi-cuenta.html';
-      }, 900);
     });
   }
 
@@ -556,50 +552,8 @@ if (contactForm) {
   });
 }
 
-// Global header search (redirects every page's search box to buscar.html)
-document.querySelectorAll('.search-form').forEach(function (form) {
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const input = form.querySelector('input[type="search"]');
-    const query = input ? input.value.trim() : '';
-    window.location.href = 'buscar.html' + (query ? ('?q=' + encodeURIComponent(query)) : '');
-  });
-});
-
-// Search results page (buscar.html)
-const searchResultsRoot = document.getElementById('searchResultsRoot');
-if (searchResultsRoot) {
-  const params = new URLSearchParams(window.location.search);
-  const query = (params.get('q') || '').trim();
-
-  const headerSearchInput = document.querySelector('.search-form input[type="search"]');
-  if (headerSearchInput && query) headerSearchInput.value = query;
-
-  document.querySelectorAll('.search-query-text').forEach(function (el) {
-    el.textContent = query;
-  });
-
-  const searchResultsContent = document.getElementById('searchResultsContent');
-  const searchEmptyState = document.getElementById('searchEmptyState');
-  const searchNoQueryState = document.getElementById('searchNoQueryState');
-
-  // Demo-only matching: an empty query shows the "start searching" prompt,
-  // and the magic term "xyz123" demonstrates the no-results state until
-  // real search logic exists on the backend.
-  if (!query) {
-    if (searchResultsContent) searchResultsContent.style.display = 'none';
-    if (searchEmptyState) searchEmptyState.style.display = 'none';
-    if (searchNoQueryState) searchNoQueryState.style.display = '';
-  } else if (query.toLowerCase() === 'xyz123') {
-    if (searchResultsContent) searchResultsContent.style.display = 'none';
-    if (searchNoQueryState) searchNoQueryState.style.display = 'none';
-    if (searchEmptyState) searchEmptyState.style.display = '';
-  } else {
-    if (searchResultsContent) searchResultsContent.style.display = '';
-    if (searchEmptyState) searchEmptyState.style.display = 'none';
-    if (searchNoQueryState) searchNoQueryState.style.display = 'none';
-  }
-}
+// The header search form submits natively via GET to the catalog route
+// (action="/catalogo", name="q"), so no JS interception is needed here.
 
 // Password recovery page (recuperar-password.html)
 const recoverForm = document.getElementById('recoverForm');

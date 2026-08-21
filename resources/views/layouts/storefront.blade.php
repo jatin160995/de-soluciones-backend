@@ -51,16 +51,32 @@
         <i class="bi bi-grid-fill"></i> Categorías
       </button>
 
-      <form class="search-form flex-grow-1" role="search" action="/buscar" method="GET">
-        <input type="search" name="q" class="form-control" placeholder="Buscar orilladoras, audífonos, herramientas...">
-        <button type="submit"><i class="bi bi-search"></i></button>
+      {{-- Search submits to the catalog, which handles ?q= alongside its own filters/sort --}}
+      <form class="search-form flex-grow-1" role="search" action="{{ route('catalog') }}" method="GET">
+        <label class="visually-hidden" for="headerSearch">Buscar productos</label>
+        <input type="search" id="headerSearch" name="q" class="form-control" value="{{ request('q') }}" placeholder="Buscar orilladoras, audífonos, herramientas..." autocomplete="off" maxlength="80">
+        <button type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
       </form>
 
       <div class="header-actions d-none d-md-flex">
-        <a href="/mi-cuenta" class="header-action-item">
-          <i class="bi bi-person"></i>
-          <span>Cuenta</span>
-        </a>
+        @guest
+          <a href="{{ route('login') }}" class="header-action-item">
+            <i class="bi bi-person"></i>
+            <span>Cuenta</span>
+          </a>
+        @else
+          <span class="header-action-item" title="{{ Auth::user()->name }}">
+            <i class="bi bi-person-check"></i>
+            <span>{{ explode(' ', trim(Auth::user()->name))[0] }}</span>
+          </span>
+          <form method="POST" action="{{ route('logout') }}" class="d-inline">
+            @csrf
+            <button type="submit" class="header-action-item header-action-btn">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Salir</span>
+            </button>
+          </form>
+        @endguest
         <a href="#" class="header-action-item">
           <i class="bi bi-heart"></i>
           <span>Favoritos</span>
