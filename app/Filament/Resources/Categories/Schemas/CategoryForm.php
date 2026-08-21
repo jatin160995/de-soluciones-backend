@@ -38,8 +38,10 @@ class CategoryForm
                 TextInput::make('slug')->label('Slug')
                     ->required()
                     ->unique(ignoreRecord: true),
-                SpatieMediaLibraryFileUpload::make('image')->label('Imagen')
+                SpatieMediaLibraryFileUpload::make('image')
+                    ->label('Imagen')
                     ->collection('image')
+                    ->disk('public')
                     ->image()
                     ->imageEditor(),
                 SeoMetaSection::make(),

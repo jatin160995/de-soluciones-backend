@@ -6,7 +6,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\FileUpload;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Filament\Schemas\Components\SeoMetaSection;
@@ -33,11 +33,12 @@ class StoreForm
                 Textarea::make('description')->label('Descripción')
                     ->default(null)
                     ->columnSpanFull(),
-                SpatieMediaLibraryFileUpload::make('logo')->label('Logo')
-                    ->collection('logo')
+                FileUpload::make('logo_path')->label('Logo')
                     ->image()
                     ->imageEditor()
-                    ->avatar(),
+                    ->disk('public')
+                    ->directory('stores')
+                    ->visibility('public'),
                 TextInput::make('whatsapp_number')->label('Número de WhatsApp')
                     ->tel()
                     ->default(null),

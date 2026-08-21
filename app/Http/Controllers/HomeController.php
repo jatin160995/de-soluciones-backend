@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\View\View;
+use App\Models\HeroBanner;
 
 class HomeController extends Controller
 {
@@ -36,6 +37,11 @@ class HomeController extends Controller
             ->sortByDesc(fn(Product $p) => 1 - ($p->discounted_price / $p->base_price))
             ->first();
 
-        return view('home', compact('categories', 'featuredProducts', 'dealOfTheDay'));
+        $heroBanners = HeroBanner::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('home', compact('categories', 'featuredProducts', 'dealOfTheDay', 'heroBanners'));
     }
 }

@@ -85,6 +85,7 @@ class ProductForm
                     SpatieMediaLibraryFileUpload::make('images')
                         ->label('Imágenes')
                         ->collection('images')
+                        ->disk('public')
                         ->multiple()
                         ->reorderable()
                         ->appendFiles()

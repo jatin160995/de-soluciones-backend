@@ -26,7 +26,7 @@
       </div>
 
       <div class="col-lg-9">
-        <div class="hero-banner">
+        {{-- <div class="hero-banner">
           <div class="hero-banner-text">
             <span class="hero-kicker">SÚPER PRECIOS · GANA MÁS POR TU DINERO</span>
             <h1>Ofertas y Promociones<br><span>en tus artículos favoritos</span></h1>
@@ -34,7 +34,37 @@
             <a href="#mas-vendidos" class="btn-shop-now">Comprar ahora <i class="bi bi-arrow-right"></i></a>
           </div>
           <img src="https://picsum.photos/seed/desol-hero2/560/460" alt="Producto destacado" class="hero-banner-img" width="560" height="460" loading="lazy">
+        </div> --}}
+        @if($heroBanners->isNotEmpty())
+<section class="hero-slider">
+  <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+      @foreach($heroBanners as $i => $banner)
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ $i }}" class="{{ $i === 0 ? 'active' : '' }}" aria-label="Slide {{ $i + 1 }}"></button>
+      @endforeach
+    </div>
+    <div class="carousel-inner">
+      @foreach($heroBanners as $i => $banner)
+        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}">
+          @if($banner->link_url)
+            <a href="{{ $banner->link_url }}">
+              <img src="{{ $banner->getFirstMediaUrl('image', 'banner') }}" class="d-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+            </a>
+          @else
+            <img src="{{ $banner->getFirstMediaUrl('image', 'banner') }}" class="d-block w-100" alt="{{ $banner->title ?? 'Banner' }}">
+          @endif
         </div>
+      @endforeach
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    </button>
+  </div>
+</section>
+@endif
       </div>
     </div>
   </div>

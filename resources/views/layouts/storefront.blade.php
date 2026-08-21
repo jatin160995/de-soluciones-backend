@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>@yield('title', 'DE Soluciones | Tecnología, Herramientas y Ofertas')</title>
+<title>@yield('title', ($siteName ?? 'DE Soluciones') . ' | Tecnología, Herramientas y Ofertas')</title>
 <meta name="description" content="@yield('meta_description', 'Tienda de tecnología con súper precios, pago contra entrega y envío rápido a todo el país.')">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,33 +16,35 @@
 </head>
 <body>
 
+@if(!empty($announcementItems))
 <div class="announce-bar">
   <div class="announce-track">
-    <span><i class="bi bi-truck"></i> ENVÍO A TODO EL PAÍS</span>
-    <span><i class="bi bi-cash-coin"></i> PAGO CONTRA ENTREGA</span>
-    <span><i class="bi bi-lightning-charge-fill"></i> OFERTAS TODOS LOS DÍAS</span>
-    <span><i class="bi bi-shield-check"></i> COMPRA 100% SEGURA</span>
-    <span><i class="bi bi-truck"></i> ENVÍO A TODO EL PAÍS</span>
-    <span><i class="bi bi-cash-coin"></i> PAGO CONTRA ENTREGA</span>
-    <span><i class="bi bi-lightning-charge-fill"></i> OFERTAS TODOS LOS DÍAS</span>
-    <span><i class="bi bi-shield-check"></i> COMPRA 100% SEGURA</span>
+    {{-- Items rendered twice so the CSS marquee (translateX -50%) loops seamlessly --}}
+    @foreach(array_merge($announcementItems, $announcementItems) as $a)
+      <span><i class="bi {{ $a['icon'] ?? 'bi-star' }}"></i> {{ $a['text'] ?? '' }}</span>
+    @endforeach
   </div>
 </div>
+@endif
 
 <header class="sticky-top">
   <div class="header-main">
-    <div class="container d-flex align-items-center gap-3 py-3">
+    <div class="container d-flex align-items-center  justify-content-between gap-3 py-3">
       <button class="menu-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-label="Abrir menú">
         <i class="bi bi-list"></i>
       </button>
 
       <a class="logo-link" href="{{ route('home') }}">
-        <svg width="42" height="42" viewBox="0 0 48 48" fill="none" aria-label="DE Soluciones logo">
-          <rect x="1" y="1" width="46" height="46" rx="12" fill="#FFC02E"/>
-          <path d="M13 33V15h9c5.5 0 9 3.6 9 9s-3.5 9-9 9h-9Z" stroke="#141B2D" stroke-width="3" fill="none" stroke-linejoin="round"/>
-          <circle cx="35" cy="13" r="3.4" fill="#141B2D"/>
-        </svg>
-        <span class="logo-text">DE<span class="logo-accent">SOLUCIONES</span></span>
+        @if(!empty($logoUrl))
+          <img src="{{ $logoUrl }}" alt="{{ $siteName ?? 'DE Soluciones' }}" class="logo-img">
+        @else
+          <svg width="42" height="42" viewBox="0 0 48 48" fill="none" aria-label="{{ $siteName ?? 'DE Soluciones' }} logo">
+            <rect x="1" y="1" width="46" height="46" rx="12" fill="#FFC02E"/>
+            <path d="M13 33V15h9c5.5 0 9 3.6 9 9s-3.5 9-9 9h-9Z" stroke="#141B2D" stroke-width="3" fill="none" stroke-linejoin="round"/>
+            <circle cx="35" cy="13" r="3.4" fill="#141B2D"/>
+          </svg>
+          <span class="logo-text">DE<span class="logo-accent">SOLUCIONES</span></span>
+        @endif
       </a>
 
       <button class="cat-toggle d-none d-lg-flex" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
@@ -74,14 +76,23 @@
 
   <nav class="cat-strip d-none d-lg-block">
     <div class="container d-flex align-items-center gap-4">
-      <a href="{{ route('home') }}" class="cat-strip-link {{ request()->routeIs('home') ? 'active' : '' }}">Inicio</a>
-      <a href="/catalogo" class="cat-strip-link">Categorías</a>
-      <a href="{{ route('home') }}#mas-vendidos" class="cat-strip-link">Más vendidos</a>
-      <a href="/ofertas" class="cat-strip-link">Ofertas <span class="hot-dot"></span></a>
-      <a href="{{ route('home') }}#especial" class="cat-strip-link">Especial del día</a>
-      <a href="{{ route('home') }}#marcas" class="cat-strip-link">Marcas</a>
-      <a href="{{ route('home') }}#contacto" class="cat-strip-link">Contacto</a>
-      <div class="ms-auto small-note"><i class="bi bi-headset"></i> Soporte: +00 000 0000</div>
+      @php
+        $curPath = '/' . trim(request()->path(), '/');
+        $curPath = $curPath === '/' ? '/' : rtrim($curPath, '/');
+      @endphp
+      @foreach($headerMenu ?? [] as $item)
+        @php
+          $mUrl    = $item['url'] ?? '#';
+          $mAnchor = str_contains($mUrl, '#');
+          $mPath   = parse_url($mUrl, PHP_URL_PATH) ?: '/';
+          $mPath   = $mPath === '/' ? '/' : '/' . trim($mPath, '/');
+          $mActive = ! $mAnchor && $mPath === $curPath;
+        @endphp
+        <a href="{{ $mUrl }}" class="cat-strip-link {{ $mActive ? 'active' : '' }}">{{ $item['label'] ?? '' }}@if(!empty($item['hot'])) <span class="hot-dot"></span>@endif</a>
+      @endforeach
+      @if(!empty($contact['support_phone']))
+        <div class="ms-auto small-note"><i class="bi bi-headset"></i> Soporte: {{ $contact['support_phone'] }}</div>
+      @endif
     </div>
   </nav>
 </header>
@@ -93,7 +104,7 @@
   </div>
   <div class="offcanvas-body">
     <ul class="mobile-cat-list">
-      @foreach($categories ?? [] as $cat)
+      @foreach($navCategories ?? [] as $cat)
         <li><a href="/catalogo?categoria={{ $cat->slug }}">@if($cat->getFirstMediaUrl('image'))
   <img src="{{ $cat->getFirstMediaUrl('image') }}" alt="{{ $cat->name }}" class="cat-icon-img">
 @else
@@ -112,51 +123,64 @@
     <div class="row g-4">
       <div class="col-lg-4">
         <a class="logo-link mb-3" href="{{ route('home') }}">
-          <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
-            <rect x="1" y="1" width="46" height="46" rx="12" fill="#FFC02E"/>
-            <path d="M13 33V15h9c5.5 0 9 3.6 9 9s-3.5 9-9 9h-9Z" stroke="#141B2D" stroke-width="3" fill="none" stroke-linejoin="round"/>
-            <circle cx="35" cy="13" r="3.4" fill="#141B2D"/>
-          </svg>
-          <span class="logo-text text-white">DE<span class="logo-accent">SOLUCIONES</span></span>
+          @if(!empty($logoUrl))
+            <img src="{{ $logoUrl }}" alt="{{ $siteName ?? 'DE Soluciones' }}" class="logo-img">
+          @else
+            <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+              <rect x="1" y="1" width="46" height="46" rx="12" fill="#FFC02E"/>
+              <path d="M13 33V15h9c5.5 0 9 3.6 9 9s-3.5 9-9 9h-9Z" stroke="#141B2D" stroke-width="3" fill="none" stroke-linejoin="round"/>
+              <circle cx="35" cy="13" r="3.4" fill="#141B2D"/>
+            </svg>
+            <span class="logo-text text-white">DE<span class="logo-accent">SOLUCIONES</span></span>
+          @endif
         </a>
-        <p class="footer-about">Tienda especializada en tecnología, herramientas y bienestar, con envío a todo el país y pago contra entrega.</p>
+        @if(!empty($footerAbout))
+          <p class="footer-about">{{ $footerAbout }}</p>
+        @endif
+        @php
+          $socialMeta = [
+            'instagram' => ['icon' => 'bi-instagram', 'label' => 'Instagram'],
+            'facebook'  => ['icon' => 'bi-facebook',  'label' => 'Facebook'],
+            'whatsapp'  => ['icon' => 'bi-whatsapp',  'label' => 'WhatsApp'],
+            'tiktok'    => ['icon' => 'bi-tiktok',    'label' => 'TikTok'],
+          ];
+        @endphp
         <div class="footer-social">
-          <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-          <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-          <a href="#" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
-          <a href="#" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+          @foreach($socialMeta as $key => $meta)
+            @if(!empty($socialLinks[$key]))
+              <a href="{{ $socialLinks[$key] }}" aria-label="{{ $meta['label'] }}"><i class="bi {{ $meta['icon'] }}"></i></a>
+            @endif
+          @endforeach
         </div>
       </div>
       <div class="col-lg-2 col-md-4">
-        <h5>Tienda</h5>
+        <h5>{{ $footerTienda['heading'] ?? 'Tienda' }}</h5>
         <ul>
-          <li><a href="/catalogo">Categorías</a></li>
-          <li><a href="{{ route('home') }}#mas-vendidos">Más vendidos</a></li>
-          <li><a href="/ofertas">Ofertas</a></li>
-          <li><a href="{{ route('home') }}#marcas">Marcas</a></li>
+          @foreach($footerTienda['items'] ?? [] as $li)
+            <li><a href="{{ $li['url'] ?? '#' }}">{{ $li['label'] ?? '' }}</a></li>
+          @endforeach
         </ul>
       </div>
       <div class="col-lg-2 col-md-4">
-        <h5>Ayuda</h5>
+        <h5>{{ $footerAyuda['heading'] ?? 'Ayuda' }}</h5>
         <ul>
-          <li><a href="#">Preguntas frecuentes</a></li>
-          <li><a href="#">Envíos y entregas</a></li>
-          <li><a href="#">Cambios y devoluciones</a></li>
-          <li><a href="/terminos">Términos y condiciones</a></li>
+          @foreach($footerAyuda['items'] ?? [] as $li)
+            <li><a href="{{ $li['url'] ?? '#' }}">{{ $li['label'] ?? '' }}</a></li>
+          @endforeach
         </ul>
       </div>
       <div class="col-lg-4 col-md-4">
         <h5>Contáctanos</h5>
         <ul>
-          <li><i class="bi bi-geo-alt"></i> Ciudad, País</li>
-          <li><i class="bi bi-telephone"></i> +00 000 000 0000</li>
-          <li><i class="bi bi-envelope"></i> contacto@de-soluciones.com</li>
+          @if(!empty($contact['address']))<li><i class="bi bi-geo-alt"></i> {{ $contact['address'] }}</li>@endif
+          @if(!empty($contact['phone']))<li><i class="bi bi-telephone"></i> {{ $contact['phone'] }}</li>@endif
+          @if(!empty($contact['email']))<li><i class="bi bi-envelope"></i> {{ $contact['email'] }}</li>@endif
         </ul>
       </div>
     </div>
     <hr>
     <div class="footer-bottom">
-      <p>© {{ date('Y') }} DE Soluciones. Todos los derechos reservados.</p>
+      <p>© {{ date('Y') }} {{ $siteName ?? 'DE Soluciones' }}. Todos los derechos reservados.</p>
     </div>
   </div>
 </footer>
