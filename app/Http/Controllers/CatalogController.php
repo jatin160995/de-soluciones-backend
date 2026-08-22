@@ -39,6 +39,8 @@ class CatalogController extends Controller
                 'category',
                 'media',
             ])
+            // Lets each card decide "Agregar" vs "Ver opciones" without an N+1.
+            ->withCount('variants')
             ->where('status', 'active');
 
 

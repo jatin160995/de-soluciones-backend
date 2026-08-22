@@ -135,17 +135,43 @@
             </div>
 
 
-            <button
-                class="btn-cart"
-                type="button"
-                data-product-id="{{ $product->id }}"
-            >
+            {{--
+                Products with variants can't be added from a grid — nobody
+                should be shipped a colour or size they never picked, so the
+                card sends them to the product page instead.
 
-                <i class="bi bi-cart-plus"></i>
+                variants_count comes from withCount('variants') on the
+                controller queries; the ?? guards any caller that forgot it.
+            --}}
+            @if(($product->variants_count ?? 0) > 0)
 
-                Agregar
+                <a
+                    href="{{ $productUrl }}"
+                    class="btn-cart"
+                >
 
-            </button>
+                    <i class="bi bi-sliders"></i>
+
+                    Ver opciones
+
+                </a>
+
+            @else
+
+                <button
+                    class="btn-cart"
+                    type="button"
+                    data-add-to-cart
+                    data-product-id="{{ $product->id }}"
+                >
+
+                    <i class="bi bi-cart-plus"></i>
+
+                    Agregar
+
+                </button>
+
+            @endif
 
         </div>
 

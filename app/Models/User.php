@@ -55,6 +55,21 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Open carts. There is no unique index on carts.user_id, so this is a
+     * hasMany and CartService takes the newest — a customer only ever works
+     * with one, but history may have left more than one behind.
+     */
+    public function carts()
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    public function cart()
+    {
+        return $this->hasOne(Cart::class)->latestOfMany();
+    }
+
+    /**
      * A storefront shopper (as opposed to admin/staff/sales agents).
      */
     public function isCustomer(): bool

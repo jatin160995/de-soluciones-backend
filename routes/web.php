@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AddressController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
@@ -19,6 +22,41 @@ Route::get('/producto/{slug}', [ProductController::class, 'show'])
 
 Route::get('/ofertas', [OffersController::class, 'index'])
     ->name('offers');
+
+
+/*
+|--------------------------------------------------------------------------
+| Carrito
+|--------------------------------------------------------------------------
+|
+| Deliberately NOT behind `auth`: this store sells pago contra entrega and
+| guest checkout is the primary path. A guest is identified by the
+| `cart_token` cookie (see CartService); on login/register their cart is
+| merged into the customer's own.
+|
+| Everything except index() answers in JSON for the fetch calls in
+| public/storefront/js/script.js.
+*/
+
+Route::prefix('carrito')->name('cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])
+        ->name('index');
+
+    Route::get('/resumen', [CartController::class, 'summary'])
+        ->name('summary');
+
+    Route::post('/agregar', [CartController::class, 'store'])
+        ->name('store');
+
+    Route::patch('/items/{item}', [CartController::class, 'update'])
+        ->name('update');
+
+    Route::delete('/items/{item}', [CartController::class, 'destroy'])
+        ->name('destroy');
+
+    Route::delete('/', [CartController::class, 'clear'])
+        ->name('clear');
+});
 
 
 /*
@@ -44,3 +82,33 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Mi cuenta
+|--------------------------------------------------------------------------
+|
+| Customer account area: order history, saved addresses and personal
+| details. Guests hitting these routes are sent to /login and returned
+| here afterwards by the login controller's redirect()->intended().
+*/
+
+Route::middleware('auth')
+    ->prefix('mi-cuenta')
+    ->name('account.')
+    ->group(function () {
+        Route::get('/', [AccountController::class, 'index'])
+            ->name('index');
+
+        Route::put('/perfil', [AccountController::class, 'updateProfile'])
+            ->name('profile.update');
+
+        Route::post('/direcciones', [AddressController::class, 'store'])
+            ->name('addresses.store');
+
+        Route::put('/direcciones/{address}', [AddressController::class, 'update'])
+            ->name('addresses.update');
+
+        Route::delete('/direcciones/{address}', [AddressController::class, 'destroy'])
+            ->name('addresses.destroy');
+    });

@@ -5,6 +5,7 @@ namespace App\View\Composers;
 use App\Models\Category;
 use App\Models\SiteSetting;
 use App\Models\Store;
+use App\Services\CartService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -16,6 +17,10 @@ use Illuminate\View\View;
  */
 class StorefrontComposer
 {
+    public function __construct(protected CartService $cart)
+    {
+    }
+
     public function compose(View $view): void
     {
         $site  = SiteSetting::map();
@@ -39,6 +44,14 @@ class StorefrontComposer
             'store'         => $store,
             //'logoUrl'       => $this->logoUrl($store),
             'navCategories' => $this->navCategories(),
+
+            /*
+             * Header cart badge. Server-rendered so the count is already right
+             * on first paint — no flash of an empty badge, and no JS needed for
+             * plain navigation. Read-only: never seeds a carts row for a
+             * visitor who hasn't added anything.
+             */
+            'cartCount'     => $this->cart->count(),
         ]);
     }
 

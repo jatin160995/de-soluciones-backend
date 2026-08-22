@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -22,7 +23,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      */
-    public function store(RegisterRequest $request): RedirectResponse
+    public function store(RegisterRequest $request, CartService $cart): RedirectResponse
     {
         $data = $request->validated();
 
@@ -44,6 +45,9 @@ class RegisteredUserController extends Controller
         $user->syncRoles(['customer']);
 
         Auth::login($user);
+
+        // Someone who filled a cart and then signed up keeps that cart.
+        $cart->mergeGuestCartInto($user);
 
         return redirect()->route('home');
     }

@@ -13,6 +13,8 @@ class OffersController extends Controller
     {
         $query = Product::query()
             ->with(['category', 'media'])
+            // Lets each card decide "Agregar" vs "Ver opciones" without an N+1.
+            ->withCount('variants')
             ->where('status', 'active')
             ->whereNotNull('discounted_price')
             ->whereColumn('discounted_price', '<', 'base_price')

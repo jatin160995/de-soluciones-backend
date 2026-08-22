@@ -301,6 +301,57 @@
                     <!-- Purchase -->
                     <!-- ========================= -->
 
+                    @php
+                        /*
+                         * Lookup table the add-to-cart script uses to turn the
+                         * shopper's attribute picks into a single variant_id.
+                         *
+                         * The key is a signature built from every rendered
+                         * variant group, in the same order the @foreach above
+                         * renders them, so the JS can rebuild it from the
+                         * active .size-btn in each group:
+                         *
+                         *   processor=m1|size=13"|color=mid night
+                         *
+                         * Missing values become empty strings on both sides, so
+                         * a variant that doesn't carry one of the attributes
+                         * still gets a stable, unambiguous key.
+                         *
+                         * The id is only a hint — AddToCartRequest re-checks
+                         * that the variant really belongs to this product, so a
+                         * tampered value can't price one product off another.
+                         */
+                        $variantKeys = array_keys($variantAttributes);
+
+                        $variantMap = [];
+
+                        foreach ($product->variants as $variant) {
+                            $attrs = is_array($variant->attributes) ? $variant->attributes : [];
+
+                            $signature = collect($variantKeys)
+                                ->map(fn ($key) => $key . '=' . mb_strtolower((string) ($attrs[$key] ?? '')))
+                                ->implode('|');
+
+                            $variantMap[$signature] = [
+                                'id'    => $variant->id,
+                                'stock' => (int) $variant->stock_quantity,
+                                'price' => config('store.currency_symbol') . ' ' . number_format((float) $variant->effective_price, 2),
+                            ];
+                        }
+
+                        $hasVariants = $product->variants->isNotEmpty();
+
+                        // Variants with no attribute groups leave nothing to
+                        // pick, so the only variant is used directly.
+                        $soleVariantId = ($hasVariants && empty($variantAttributes))
+                            ? $product->variants->first()->id
+                            : null;
+                    @endphp
+
+                    @if($hasVariants)
+                        <script type="application/json" id="productVariants">@json($variantMap)</script>
+                    @endif
+
                     <div class="purchase-row">
 
                         <div class="qty-stepper">
@@ -338,6 +389,10 @@
                         <button
                             type="button"
                             class="btn-cart btn-cart-lg"
+                            data-add-to-cart
+                            data-product-id="{{ $product->id }}"
+                            data-has-variants="{{ $hasVariants ? '1' : '0' }}"
+                            @if($soleVariantId) data-variant-id="{{ $soleVariantId }}" @endif
                             @disabled(!$inStock)
                         >
                             <i class="bi bi-cart-plus"></i>
@@ -814,40 +869,10 @@ document.addEventListener('DOMContentLoaded', function () {
      * ========================================
      * Quantity
      * ========================================
+     *
+     * Handled globally in storefront/js/script.js. A second binding used to
+     * live here, which meant every "+" click fired twice and stepped by 2.
      */
-
-    document.querySelectorAll('.qty-btn').forEach(function (button) {
-
-        button.addEventListener('click', function () {
-
-            const input = this
-                .closest('.qty-stepper')
-                .querySelector('.qty-input');
-
-            if (!input) {
-                return;
-            }
-
-            let value = parseInt(input.value, 10) || 1;
-
-            if (this.dataset.action === 'plus') {
-                value++;
-            }
-
-            if (this.dataset.action === 'minus') {
-                value--;
-            }
-
-            const min = parseInt(input.min || 1, 10);
-            const max = parseInt(input.max || 99, 10);
-
-            value = Math.max(min, Math.min(max, value));
-
-            input.value = value;
-
-        });
-
-    });
 
 
     /*

@@ -611,17 +611,40 @@
                                         </div>
 
 
-                                        <button
-                                            class="btn-cart"
-                                            type="button"
-                                            data-product-id="{{ $product->id }}"
-                                        >
+                                        {{--
+                                            Products with variants go to the
+                                            product page — a grid card can't
+                                            ask for a size or a colour.
+                                        --}}
+                                        @if(($product->variants_count ?? 0) > 0)
 
-                                            <i class="bi bi-cart-plus"></i>
+                                            <a
+                                                href="{{ route('product.show', $product->slug) }}"
+                                                class="btn-cart"
+                                            >
 
-                                            Agregar
+                                                <i class="bi bi-sliders"></i>
 
-                                        </button>
+                                                Ver opciones
+
+                                            </a>
+
+                                        @else
+
+                                            <button
+                                                class="btn-cart"
+                                                type="button"
+                                                data-add-to-cart
+                                                data-product-id="{{ $product->id }}"
+                                            >
+
+                                                <i class="bi bi-cart-plus"></i>
+
+                                                Agregar
+
+                                            </button>
+
+                                        @endif
 
                                     </div>
 

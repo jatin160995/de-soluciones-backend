@@ -21,6 +21,8 @@ class HomeController extends Controller
 
         $featuredProducts = Product::query()
             ->with(['category', 'media'])
+            // Lets each card decide "Agregar" vs "Ver opciones" without an N+1.
+            ->withCount('variants')
             ->where('status', 'active')
             ->where('is_featured', true)
             ->latest()

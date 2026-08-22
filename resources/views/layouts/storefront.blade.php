@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{{-- The cart fetch calls read this instead of hunting for a hidden form field --}}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title', ($siteName ?? 'DE Soluciones') . ' | Tecnología, Herramientas y Ofertas')</title>
 <meta name="description" content="@yield('meta_description', 'Tienda de tecnología con súper precios, pago contra entrega y envío rápido a todo el país.')">
 
@@ -14,7 +16,16 @@
 <link rel="stylesheet" href="{{ asset('storefront/css/style.css') }}">
 @stack('styles')
 </head>
-<body>
+{{--
+  Cart endpoints live on the body so script.js never hard-codes a URL — the
+  paths are Spanish and could be renamed from routes/web.php alone.
+--}}
+<body
+  data-cart-add-url="{{ route('cart.store') }}"
+  data-cart-item-url="{{ url('/carrito/items') }}"
+  data-cart-summary-url="{{ route('cart.summary') }}"
+  data-cart-url="{{ route('cart.index') }}"
+>
 
 @if(!empty($announcementItems))
 <div class="announce-bar">
@@ -59,16 +70,18 @@
       </form>
 
       <div class="header-actions d-none d-md-flex">
+        @php $onAccount = request()->routeIs('account.*'); @endphp
         @guest
           <a href="{{ route('login') }}" class="header-action-item">
             <i class="bi bi-person"></i>
             <span>Cuenta</span>
           </a>
         @else
-          <span class="header-action-item" title="{{ Auth::user()->name }}">
-            <i class="bi bi-person-check"></i>
+          {{-- Signed in: the Cuenta button becomes the entry point to /mi-cuenta --}}
+          <a href="{{ route('account.index') }}" class="header-action-item {{ $onAccount ? 'active' : '' }}" title="{{ Auth::user()->name }}">
+            <i class="bi {{ $onAccount ? 'bi-person-fill' : 'bi-person-check' }}"></i>
             <span>{{ explode(' ', trim(Auth::user()->name))[0] }}</span>
-          </span>
+          </a>
           <form method="POST" action="{{ route('logout') }}" class="d-inline">
             @csrf
             <button type="submit" class="header-action-item header-action-btn">
@@ -81,10 +94,17 @@
           <i class="bi bi-heart"></i>
           <span>Favoritos</span>
         </a>
-        {{-- Cart badge is a placeholder until the Carrito step wires a real Livewire counter --}}
-        <a href="/carrito" class="header-action-item cart-action">
+        {{--
+          Badge is server-rendered from StorefrontComposer, so the count is
+          correct on first paint and on plain navigation. script.js only creates
+          or removes the node when the count crosses zero.
+        --}}
+        <a href="{{ route('cart.index') }}" class="header-action-item cart-action {{ request()->routeIs('cart.*') ? 'active' : '' }}">
           <i class="bi bi-cart3"></i>
           <span>Carrito</span>
+          @if(($cartCount ?? 0) > 0)
+            <span class="mini-badge">{{ $cartCount }}</span>
+          @endif
         </a>
       </div>
     </div>
