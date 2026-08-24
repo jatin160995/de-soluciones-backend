@@ -51,7 +51,7 @@
       </div>
     @endif
 
-    <div id="cartNotice" class="alert alert-warning d-flex align-items-center gap-2" role="alert" style="display:none;">
+    <div id="cartNotice" class="alert alert-warning align-items-center gap-2" role="alert" style="display:none;">
       <i class="bi bi-exclamation-triangle-fill"></i> <span id="cartNoticeText"></span>
     </div>
 

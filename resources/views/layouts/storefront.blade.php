@@ -124,7 +124,7 @@
           $mPath   = $mPath === '/' ? '/' : '/' . trim($mPath, '/');
           $mActive = ! $mAnchor && $mPath === $curPath;
         @endphp
-        <a href="{{ $mUrl }}" class="cat-strip-link {{ $mActive ? 'active' : '' }}">{{ $item['label'] ?? '' }}@if(!empty($item['hot'])) <span class="hot-dot"></span>@endif</a>
+        <a href="{{ url($mUrl) }}" class="cat-strip-link {{ $mActive ? 'active' : '' }}">{{ $item['label'] ?? '' }}@if(!empty($item['hot'])) <span class="hot-dot"></span>@endif</a>
       @endforeach
       @if(!empty($contact['support_phone']))
         <div class="ms-auto small-note"><i class="bi bi-headset"></i> Soporte: {{ $contact['support_phone'] }}</div>
@@ -141,7 +141,7 @@
   <div class="offcanvas-body">
     <ul class="mobile-cat-list">
       @foreach($navCategories ?? [] as $cat)
-        <li><a href="/catalogo?categoria={{ $cat->slug }}">@if($cat->getFirstMediaUrl('image'))
+        <li><a href="{{ url('/catalogo?categoria=' . $cat->slug) }}">@if($cat->getFirstMediaUrl('image'))
   <img src="{{ $cat->getFirstMediaUrl('image') }}" alt="{{ $cat->name }}" class="cat-icon-img">
 @else
   <i class="bi bi-tag"></i>
