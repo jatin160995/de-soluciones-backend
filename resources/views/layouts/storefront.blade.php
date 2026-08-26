@@ -59,7 +59,7 @@
       </a>
 
       <button class="cat-toggle d-none d-lg-flex" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
-        <i class="bi bi-grid-fill"></i> Categorías
+        <i class="bi bi-grid-fill"></i> Menú
       </button>
 
       {{-- Search submits to the catalog, which handles ?q= alongside its own filters/sort --}}
@@ -133,7 +133,7 @@
   </nav>
 </header>
 
-<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
+{{-- <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
   <div class="offcanvas-header">
     <h5 class="offcanvas-title">Categorías</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
@@ -149,6 +149,104 @@
       @endforeach
       <li><a href="/ofertas"><i class="bi bi-fire"></i> Ofertas</a></li>
     </ul>
+  </div>
+</div> --}}
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">Menú</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    {{-- ===== Account / Cart actions — mobile only ===== --}}
+    <div class="mobile-user-actions">
+      @guest
+        <a href="{{ route('login') }}" class="mobile-user-action-btn">
+          <i class="bi bi-person"></i>
+          <span>Iniciar sesión</span>
+        </a>
+      @else
+        @php $onAccount = request()->routeIs('account.*'); @endphp
+        <a href="{{ route('account.index') }}" class="mobile-user-action-btn {{ $onAccount ? 'active' : '' }}">
+          <i class="bi {{ $onAccount ? 'bi-person-fill' : 'bi-person-check' }}"></i>
+          <span>{{ explode(' ', trim(Auth::user()->name))[0] }}</span>
+        </a>
+        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+          @csrf
+          <button type="submit" class="mobile-user-action-btn">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Salir</span>
+          </button>
+        </form>
+      @endguest
+
+      <a href="#" class="mobile-user-action-btn">
+        <i class="bi bi-heart"></i>
+        <span>Favoritos</span>
+      </a>
+
+      <a href="{{ route('cart.index') }}" class="mobile-user-action-btn {{ request()->routeIs('cart.*') ? 'active' : '' }}">
+        <i class="bi bi-cart3"></i>
+        <span>Carrito</span>
+        @if(($cartCount ?? 0) > 0)
+          <span class="mobile-cart-badge">{{ $cartCount }}</span>
+        @endif
+      </a>
+    </div>
+    {{-- ===== Header nav menu links — mobile only ===== --}}
+    @if(!empty($headerMenu))
+      <div class="mobile-menu-divider">
+        <span>Menú</span>
+      </div>
+      <ul class="mobile-nav-menu">
+        @php
+          $curPath = '/' . trim(request()->path(), '/');
+          $curPath = $curPath === '/' ? '/' : rtrim($curPath, '/');
+        @endphp
+        @foreach($headerMenu as $item)
+          @php
+            $mUrl    = $item['url'] ?? '#';
+            $mAnchor = str_contains($mUrl, '#');
+            $mPath   = parse_url($mUrl, PHP_URL_PATH) ?: '/';
+            $mPath   = $mPath === '/' ? '/' : '/' . trim($mPath, '/');
+            $mActive = ! $mAnchor && $mPath === $curPath;
+          @endphp
+          <li>
+            <a href="{{ url($mUrl) }}" class="{{ $mActive ? 'active' : '' }}">
+              {{ $item['label'] ?? '' }}
+              @if(!empty($item['hot']))<span class="hot-dot"></span>@endif
+            </a>
+          </li>
+        @endforeach
+        @if(!empty($contact['support_phone']))
+          <li class="mobile-nav-support">
+            <i class="bi bi-headset"></i> Soporte: {{ $contact['support_phone'] }}
+          </li>
+        @endif
+      </ul>
+    @endif
+
+    <div class="mobile-menu-divider">
+      <span>Categorías</span>
+    </div>
+
+    {{-- ===== Categories ===== --}}
+    <ul class="mobile-cat-list">
+      @foreach($navCategories ?? [] as $cat)
+        <li>
+          <a href="{{ url('/catalogo?categoria=' . $cat->slug) }}">
+            @if($cat->getFirstMediaUrl('image'))
+              <img src="{{ $cat->getFirstMediaUrl('image') }}" alt="{{ $cat->name }}" class="cat-icon-img">
+            @else
+              <i class="bi bi-tag"></i>
+            @endif
+            {{ $cat->name }}
+          </a>
+        </li>
+      @endforeach
+      <li><a href="/ofertas"><i class="bi bi-fire"></i> Ofertas</a></li>
+    </ul>
+
   </div>
 </div>
 
@@ -193,7 +291,7 @@
         <h5>{{ $footerTienda['heading'] ?? 'Tienda' }}</h5>
         <ul>
           @foreach($footerTienda['items'] ?? [] as $li)
-            <li><a href="{{ $li['url'] ?? '#' }}">{{ $li['label'] ?? '' }}</a></li>
+            <li><a href="{{ url($li['url'] ?? '#') }}">{{ $li['label'] ?? '' }}</a></li>
           @endforeach
         </ul>
       </div>
@@ -201,7 +299,7 @@
         <h5>{{ $footerAyuda['heading'] ?? 'Ayuda' }}</h5>
         <ul>
           @foreach($footerAyuda['items'] ?? [] as $li)
-            <li><a href="{{ $li['url'] ?? '#' }}">{{ $li['label'] ?? '' }}</a></li>
+            <li><a href="{{ url($li['url'] ?? '#') }}">{{ $li['label'] ?? '' }}</a></li>
           @endforeach
         </ul>
       </div>
@@ -220,7 +318,15 @@
     </div>
   </div>
 </footer>
-
+{{-- ===== Floating cart button — mobile only ===== --}}
+<a href="{{ route('cart.index') }}" class="floating-cart-btn d-lg-none cart-action" aria-label="Ver carrito">
+  <i class="bi bi-cart3"></i>
+  @if(($cartCount ?? 0) > 0)
+    <span class="floating-cart-badge mini-badge" id="floatingCartBadge">{{ $cartCount }}</span>
+  @else
+    <span class="floating-cart-badge" id="floatingCartBadge" style="display:none;">0</span>
+  @endif
+</a>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ asset('storefront/js/script.js') }}"></script>
 @stack('scripts')

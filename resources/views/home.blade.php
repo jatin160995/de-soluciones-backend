@@ -10,13 +10,13 @@
           <div class="sidebar-cats-head">Categorías</div>
           <ul>
             @foreach($categories as $cat)
-              <li><a href="/catalogo?categoria={{ $cat->slug }}">@if($cat->getFirstMediaUrl('image'))
+              <li><a href="{{ url('/catalogo?categoria=' . $cat->slug) }}">@if($cat->getFirstMediaUrl('image'))
                 <img src="{{ $cat->getFirstMediaUrl('image') }}" alt="{{ $cat->name }}" class="cat-icon-img">
                 @else
                 <i class="bi bi-tag"></i>
                 @endif {{ $cat->name }} <i class="bi bi-chevron-right ms-auto"></i></a></li>
             @endforeach
-            <li><a href="/catalogo"><i class="bi bi-three-dots"></i> Ver todo <i class="bi bi-chevron-right ms-auto"></i></a></li>
+            <li><a href="{{ url('/catalogo') }}"><i class="bi bi-three-dots"></i> Ver todo <i class="bi bi-chevron-right ms-auto"></i></a></li>
           </ul>
           <div class="sidebar-promo">
             <i class="bi bi-cash-coin"></i>
@@ -87,7 +87,7 @@
     <div class="row g-3 g-lg-4">
       @foreach($categories as $cat)
         <div class="col-4 col-md-2">
-          <a href="/catalogo?categoria={{ $cat->slug }}" class="cat-circle">
+          <a href="{{ url('/catalogo?categoria=' . $cat->slug) }}" class="cat-circle">
             <div class="cat-circle-img">@if($cat->getFirstMediaUrl('image'))
             <img src="{{ $cat->getFirstMediaUrl('image') }}" alt="{{ $cat->name }}" class="cat-icon-img">
             @else
@@ -117,7 +117,7 @@
       @endforelse
     </div>
     <div class="text-center mt-4">
-      <a href="/catalogo" class="btn-view-all">Ver todos los productos <i class="bi bi-arrow-right"></i></a>
+      <a href="{{ url('/catalogo') }}" class="btn-view-all">Ver todos los productos <i class="bi bi-arrow-right"></i></a>
     </div>
   </div>
 </section>
