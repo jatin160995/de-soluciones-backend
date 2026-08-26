@@ -13,6 +13,16 @@
                     {{ number_format($currentEstimate['commission_amount'] ?? 0, 2) }}
                     {{ $currentEstimate['commission_currency'] ?? config('store.currency', 'HNL') }}
                 </div>
+                @if (($currentEstimate['markup_bonus_amount'] ?? 0) > 0)
+                    <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.35rem;">
+                        + {{ number_format($currentEstimate['markup_bonus_amount'], 2) }} HNL por sobreprecio en pedidos manuales
+                    </div>
+                    @if (($currentEstimate['commission_currency'] ?? 'HNL') === 'HNL')
+                        <div style="font-size: 0.85rem; font-weight: 600; margin-top: 0.15rem;">
+                            Total: {{ number_format(($currentEstimate['commission_amount'] ?? 0) + $currentEstimate['markup_bonus_amount'], 2) }} HNL
+                        </div>
+                    @endif
+                @endif
                 <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">
                     Ventas entregadas hasta hoy: L. {{ number_format($currentEstimate['delivered_sales_total'] ?? 0, 2) }}
                 </div>
@@ -28,6 +38,16 @@
                         {{ number_format($lastStatement->commission_amount, 2) }}
                         {{ $lastStatement->commission_currency }}
                     </div>
+                    @if ((float) $lastStatement->markup_bonus_amount > 0)
+                        <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.35rem;">
+                            + {{ number_format($lastStatement->markup_bonus_amount, 2) }} HNL por sobreprecio en pedidos manuales
+                        </div>
+                        @if ($lastStatement->commission_currency === 'HNL')
+                            <div style="font-size: 0.85rem; font-weight: 600; margin-top: 0.15rem;">
+                                Total: {{ number_format($lastStatement->total_hnl, 2) }} HNL
+                            </div>
+                        @endif
+                    @endif
                     <div style="margin-top: 0.5rem;">
                         <x-filament::badge :color="$lastStatement->status === 'paid' ? 'success' : 'warning'">
                             {{ $lastStatement->status === 'paid' ? 'Pagada' : 'Pendiente' }}

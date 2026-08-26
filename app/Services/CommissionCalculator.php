@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\AgentCommissionStatement;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\SiteSetting;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -11,11 +13,12 @@ use Illuminate\Support\Facades\DB;
 class CommissionCalculator
 {
     /**
-     * Sum of delivered order totals for an agent within a calendar month.
-     * "Delivered within the month" is based on when the order last transitioned
-     * to status = 'delivered' (via order_status_history), not when it was created.
+     * IDs of the agent's orders that transitioned to status = 'delivered'
+     * at some point within the given calendar month. Shared by
+     * deliveredSalesTotal() and manualMarkupBonus() so both use the exact
+     * same definition of "delivered within the month".
      */
-    public function deliveredSalesTotal(User $agent, CarbonInterface $periodMonth): float
+    protected function deliveredOrderIdsQuery(User $agent, CarbonInterface $periodMonth)
     {
         $start = $periodMonth->copy()->startOfMonth();
         $end = $periodMonth->copy()->endOfMonth();
@@ -25,25 +28,65 @@ class CommissionCalculator
             ->where('status', 'delivered')
             ->groupBy('order_id');
 
-        return (float) Order::query()
+        return Order::query()
             ->where('sales_agent_id', $agent->id)
             ->where('status', 'delivered')
             ->joinSub($deliveredAtSubquery, 'delivered_events', function ($join) {
                 $join->on('orders.id', '=', 'delivered_events.order_id');
             })
-            ->whereBetween('delivered_events.delivered_at', [$start, $end])
-            ->sum('orders.total');
+            ->whereBetween('delivered_events.delivered_at', [$start, $end]);
+    }
+
+    /**
+     * Sum of delivered order totals for an agent within a calendar month.
+     * "Delivered within the month" is based on when the order last transitioned
+     * to status = 'delivered' (via order_status_history), not when it was created.
+     */
+    public function deliveredSalesTotal(User $agent, CarbonInterface $periodMonth): float
+    {
+        return (float) $this->deliveredOrderIdsQuery($agent, $periodMonth)->sum('orders.total');
+    }
+
+    /**
+     * Extra bonus for manual (phone/WhatsApp) orders sold above the product's
+     * real/base price. Per order line: (sale_price - base_price) x quantity,
+     * with the global markup_deduction_percent (site_settings, default 19%)
+     * taken off. Only manual-source orders count - storefront prices are fixed,
+     * so there's never a markup to bonus there. This is always in HNL and is
+     * additive on top of whatever the agent's plan (flat/volume/tiered) already
+     * pays - it does not replace or interact with that calculation.
+     */
+    public function manualMarkupBonus(User $agent, CarbonInterface $periodMonth): float
+    {
+        $deductionPercent = (float) SiteSetting::get('markup_deduction_percent', 19);
+
+        $orderIds = $this->deliveredOrderIdsQuery($agent, $periodMonth)
+            ->where('orders.source', 'manual')
+            ->pluck('orders.id');
+
+        if ($orderIds->isEmpty()) {
+            return 0.0;
+        }
+
+        $totalMarkup = OrderItem::query()
+            ->whereIn('order_id', $orderIds)
+            ->whereNotNull('base_unit_price')
+            ->get()
+            ->sum(fn(OrderItem $item) => $item->totalMarkup());
+
+        return round($totalMarkup * (1 - ($deductionPercent / 100)), 2);
     }
 
     /**
      * Compute the commission amount + currency for an agent for a given month,
-     * based on their active commission plan.
+     * based on their active commission plan, plus any manual-order markup bonus.
      *
-     * @return array{delivered_sales_total: float, commission_amount: float, commission_currency: string}
+     * @return array{delivered_sales_total: float, commission_amount: float, commission_currency: string, markup_bonus_amount: float}
      */
     public function calculate(User $agent, CarbonInterface $periodMonth): array
     {
         $deliveredTotal = $this->deliveredSalesTotal($agent, $periodMonth);
+        $markupBonus = $this->manualMarkupBonus($agent, $periodMonth);
         $plan = $agent->commissionPlan;
 
         if (! $plan || ! $plan->is_active) {
@@ -51,6 +94,7 @@ class CommissionCalculator
                 'delivered_sales_total' => $deliveredTotal,
                 'commission_amount' => 0.0,
                 'commission_currency' => config('store.currency', 'HNL'),
+                'markup_bonus_amount' => $markupBonus,
             ];
         }
 
@@ -65,6 +109,7 @@ class CommissionCalculator
             'delivered_sales_total' => $deliveredTotal,
             'commission_amount' => $amount,
             'commission_currency' => $currency,
+            'markup_bonus_amount' => $markupBonus,
         ];
     }
 
@@ -94,6 +139,7 @@ class CommissionCalculator
                 'delivered_sales_total' => $result['delivered_sales_total'],
                 'commission_amount' => $result['commission_amount'],
                 'commission_currency' => $result['commission_currency'],
+                'markup_bonus_amount' => $result['markup_bonus_amount'],
             ]
         );
     }

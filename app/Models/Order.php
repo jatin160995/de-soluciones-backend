@@ -24,6 +24,7 @@ class Order extends Model
         'discount_amount',
         'total',
         'payment_method',
+        'source',
         'customer_name',
         'customer_phone',
         'customer_email',
@@ -85,5 +86,14 @@ class Order extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * True for orders entered by hand by a sales agent (phone/WhatsApp sales),
+     * as opposed to orders placed through the storefront checkout.
+     */
+    public function isManual(): bool
+    {
+        return $this->source === 'manual';
     }
 }

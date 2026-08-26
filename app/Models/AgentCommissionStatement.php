@@ -13,6 +13,7 @@ class AgentCommissionStatement extends Model
         'delivered_sales_total',
         'commission_amount',
         'commission_currency',
+        'markup_bonus_amount',
         'status',
         'paid_at',
         'paid_by',
@@ -23,8 +24,25 @@ class AgentCommissionStatement extends Model
         'period_month' => 'date',
         'delivered_sales_total' => 'decimal:2',
         'commission_amount' => 'decimal:2',
+        'markup_bonus_amount' => 'decimal:2',
         'paid_at' => 'datetime',
     ];
+
+    /**
+     * commission_amount (plan-based, in commission_currency) + markup_bonus_amount
+     * (always HNL) are intentionally kept as separate columns rather than summed
+     * into one, because a USD volume_bonus plan can't be combined with an HNL
+     * markup bonus without misrepresenting the currency. This accessor is only
+     * safe to use for display when commission_currency is HNL.
+     */
+    public function getTotalHnlAttribute(): ?float
+    {
+        if ($this->commission_currency !== 'HNL') {
+            return null;
+        }
+
+        return round((float) $this->commission_amount + (float) $this->markup_bonus_amount, 2);
+    }
 
     public function user(): BelongsTo
     {

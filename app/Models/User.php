@@ -99,6 +99,6 @@ class User extends Authenticatable implements FilamentUser
             return false;
         }
 
-        return $this->hasRole('super_admin') || $this->hasRole('panel_user');
+        return $this->hasRole('super_admin') || $this->hasRole('panel_user') || $this->hasRole('sales_agent');
     }
 }

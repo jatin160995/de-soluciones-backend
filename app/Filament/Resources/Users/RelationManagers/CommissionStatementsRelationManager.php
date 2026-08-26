@@ -30,6 +30,16 @@ class CommissionStatementsRelationManager extends RelationManager
                 TextColumn::make('commission_amount')
                     ->label('Comisión')
                     ->formatStateUsing(fn($state, $record) => number_format($state, 2) . ' ' . $record->commission_currency),
+                TextColumn::make('markup_bonus_amount')
+                    ->label('Bono por sobreprecio')
+                    ->formatStateUsing(fn($state) => (float) $state > 0 ? number_format($state, 2) . ' HNL' : '—')
+                    ->toggleable(),
+                TextColumn::make('total_hnl')
+                    ->label('Total')
+                    ->formatStateUsing(fn($state, $record) => $state !== null
+                        ? number_format($state, 2) . ' HNL'
+                        : number_format($record->commission_amount, 2) . ' ' . $record->commission_currency)
+                    ->toggleable(),
                 TextColumn::make('status')
                     ->label('Estado')
                     ->badge()

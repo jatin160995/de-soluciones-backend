@@ -48,6 +48,10 @@ class MyCommissions extends Page implements HasTable
                 TextColumn::make('commission_amount')
                     ->label('Comisión')
                     ->formatStateUsing(fn($state, $record) => number_format($state, 2) . ' ' . $record->commission_currency),
+                TextColumn::make('markup_bonus_amount')
+                    ->label('Bono por sobreprecio')
+                    ->formatStateUsing(fn($state) => (float) $state > 0 ? number_format($state, 2) . ' HNL' : '—')
+                    ->toggleable(),
                 TextColumn::make('status')
                     ->label('Estado')
                     ->badge()
