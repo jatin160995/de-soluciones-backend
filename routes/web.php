@@ -7,6 +7,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OffersController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
@@ -112,3 +113,17 @@ Route::middleware('auth')
         Route::delete('/direcciones/{address}', [AddressController::class, 'destroy'])
             ->name('addresses.destroy');
     });
+
+
+
+Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])
+        ->name('index');
+
+    Route::post('/', [CheckoutController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('store');
+
+    Route::get('/confirmacion', [CheckoutController::class, 'confirmation'])
+        ->name('confirmation');
+});

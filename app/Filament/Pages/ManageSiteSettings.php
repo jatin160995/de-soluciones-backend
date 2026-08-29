@@ -73,6 +73,8 @@ class ManageSiteSettings extends Page implements HasForms
             'contact_phone'      => $map['contact_phone'] ?? '',
             'contact_email'      => $map['contact_email'] ?? '',
             'support_phone'      => $map['support_phone'] ?? '',
+            'standard_shipping_cost' => $map['standard_shipping_cost'] ?? 0,
+            'express_shipping_cost'  => $map['express_shipping_cost'] ?? 85,
         ]);
     }
 
@@ -192,6 +194,27 @@ class ManageSiteSettings extends Page implements HasForms
                         TextInput::make('support_phone')->label('Teléfono de soporte (barra de navegación)'),
                     ])
                     ->columns(2),
+
+                Section::make('Envíos')
+                    ->description('Costos de envío aplicados en el checkout. El envío estándar va incluido en el precio del producto (costo 0); el exprés se cobra aparte.')
+                    ->schema([
+                        TextInput::make('standard_shipping_cost')
+                            ->label('Envío estándar (L.)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->prefix('L.')
+                            ->required()
+                            ->helperText('Debe quedar en 0 salvo que el envío estándar deje de ser gratis.'),
+                        TextInput::make('express_shipping_cost')
+                            ->label('Envío exprés (L.)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->prefix('L.')
+                            ->required(),
+                    ])
+                    ->columns(2),
             ])
             ->statePath('data');
     }
@@ -228,6 +251,8 @@ class ManageSiteSettings extends Page implements HasForms
         SiteSetting::put('contact_phone', $state['contact_phone'] ?? '');
         SiteSetting::put('contact_email', $state['contact_email'] ?? '');
         SiteSetting::put('support_phone', $state['support_phone'] ?? '');
+        SiteSetting::put('standard_shipping_cost', (float) ($state['standard_shipping_cost'] ?? 0));
+        SiteSetting::put('express_shipping_cost', (float) ($state['express_shipping_cost'] ?? 85));
 
         Notification::make()
             ->title('Configuración guardada')
