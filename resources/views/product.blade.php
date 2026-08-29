@@ -420,6 +420,13 @@
                             class="btn-buy-now"
                             data-bs-toggle="modal"
                             data-bs-target="#buyNowModal"
+                            data-buy-now
+                            data-product-id="{{ $product->id }}"
+                            data-has-variants="{{ $hasVariants ? '1' : '0' }}"
+                            data-product-price="{{ config('store.currency_symbol') }} {{ number_format($effectivePrice, 2) }}"
+                            @if($soleVariantId)
+                                data-variant-id="{{ $soleVariantId }}"
+                            @endif
                         >
                             Comprar ahora
                             <i class="bi bi-arrow-right"></i>
@@ -679,64 +686,742 @@
 <!-- Buy Now Modal -->
 <!-- ========================= -->
 
-<div
-    class="modal fade"
-    id="buyNowModal"
-    tabindex="-1"
-    aria-labelledby="buyNowModalLabel"
-    aria-hidden="true"
->
+    <div
+        class="modal fade"
+        id="buyNowModal"
+        tabindex="-1"
+        aria-labelledby="buyNowModalLabel"
+        aria-hidden="true">
 
-    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
 
-        <div class="modal-content">
+            <div class="modal-content buy-now-modal">
 
-            <div class="modal-header">
+                <!-- Header -->
 
-                <h5
-                    class="modal-title"
-                    id="buyNowModalLabel"
-                >
-                    Comprar ahora
-                </h5>
+                <div class="modal-header">
 
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Cerrar"
-                ></button>
+                    <h5
+                        class="modal-title"
+                        id="buyNowModalLabel"
+                    >
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Completa tu pedido
+                    </h5>
 
-            </div>
-
-
-            <div class="modal-body">
-
-                <p>
-                    Vas a comprar:
-                </p>
-
-                <strong>
-                    {{ $product->name }}
-                </strong>
-
-                <div class="mt-3">
-
-                    <strong>
-                        {{ number_format($effectivePrice, 2) }}
-                    </strong>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"
+                    ></button>
 
                 </div>
 
-                <div class="mt-3">
 
-                    <a
-                        href="{{ url('/checkout') }}"
-                        class="btn-buy-now w-100"
+                <!-- Body -->
+
+                <div class="modal-body">
+
+                    {{-- Buy Now validation errors --}}
+
+                    @if($errors->buy_now->any())
+
+                        <div class="alert alert-danger">
+
+                            <strong>
+                                Hay errores en el formulario:
+                            </strong>
+
+                            <ul class="mb-0 mt-2">
+
+                                @foreach($errors->buy_now->all() as $error)
+
+                                    <li>
+                                        {{ $error }}
+                                    </li>
+
+                                @endforeach
+
+                            </ul>
+
+                        </div>
+
+                    @endif
+
+
+                    <!-- Product summary -->
+
+                    <div class="buy-now-product-summary">
+
+                        <div class="buy-now-product-info">
+
+                            @if($mainImage)
+
+                                <img
+                                    src="{{ $mainImage['thumb'] ?: $mainImage['url'] }}"
+                                    alt="{{ $product->name }}"
+                                    class="buy-now-product-image"
+                                >
+
+                            @endif
+
+
+                            <div>
+
+                                <p class="buy-now-product-name mb-1">
+                                    {{ $product->name }}
+                                </p>
+
+                                <span
+                                    class="buy-now-product-variant"
+                                    id="buyNowVariantSummary"
+                                >
+                                    Producto seleccionado
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="buy-now-product-price">
+
+                            <span id="buyNowUnitPrice">
+
+                                {{ config('store.currency_symbol') }}
+                                {{ number_format($effectivePrice, 2) }}
+
+                            </span>
+
+                            <span class="buy-now-qty">
+
+                                x
+
+                                <span id="buyNowQty">
+                                    1
+                                </span>
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Buy Now Form -->
+
+                    <form
+                        id="buyNowForm"
+                        method="POST"
+                        action="{{ route('buy-now.store') }}"
+                        novalidate
                     >
-                        Continuar al checkout
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
+
+                        @csrf
+
+
+                        <!-- Product -->
+
+                        <input
+                            type="hidden"
+                            name="product_id"
+                            id="buyNowProductId"
+                            value="{{ $product->id }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="variant_id"
+                            id="buyNowVariantId"
+                            value="{{ old('variant_id') }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="quantity"
+                            id="buyNowQtyInput"
+                            value="{{ old('quantity', 1) }}"
+                        >
+
+
+                        <div class="row g-3">
+
+
+                            <!-- Customer name -->
+
+                            <div class="col-md-6">
+
+                                <label
+                                    class="form-label"
+                                    for="bnName"
+                                >
+                                    Nombre completo
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="bnName"
+                                    name="customer_name"
+                                    value="{{ old('customer_name', auth()->user()?->name) }}"
+                                    autocomplete="name"
+                                    required
+                                >
+
+                                @error('customer_name', 'buy_now')
+
+                                    <div class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </div>
+
+                                @enderror
+
+                            </div>
+
+
+                            <!-- WhatsApp -->
+
+                            <div class="col-md-6">
+
+                                <label
+                                    class="form-label"
+                                    for="bnWhatsapp"
+                                >
+                                    Número de WhatsApp
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    class="form-control"
+                                    id="bnWhatsapp"
+                                    name="whatsapp_number"
+                                    value="{{ old('whatsapp_number', auth()->user()?->whatsapp_number) }}"
+                                    placeholder="+504 0000-0000"
+                                    autocomplete="tel"
+                                    required
+                                >
+
+                                @error('whatsapp_number', 'buy_now')
+
+                                    <div class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </div>
+
+                                @enderror
+
+                            </div>
+
+
+                            <!-- Phone -->
+
+                            <div class="col-md-6">
+
+                                <label
+                                    class="form-label"
+                                    for="bnPhone"
+                                >
+                                    Teléfono
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    class="form-control"
+                                    id="bnPhone"
+                                    name="customer_phone"
+                                    value="{{ old('customer_phone', auth()->user()?->phone) }}"
+                                    placeholder="+504 0000-0000"
+                                    autocomplete="tel"
+                                    required
+                                >
+
+                                @error('customer_phone', 'buy_now')
+
+                                    <div class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </div>
+
+                                @enderror
+
+                            </div>
+
+
+                            <!-- Alternate phone -->
+
+                            <div class="col-md-6">
+
+                                <label
+                                    class="form-label"
+                                    for="bnAltPhone"
+                                >
+                                    Teléfono alternativo (opcional)
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    class="form-control"
+                                    id="bnAltPhone"
+                                    name="alternate_phone"
+                                    value="{{ old('alternate_phone') }}"
+                                    placeholder="+504 0000-0000"
+                                >
+
+                            </div>
+
+
+                            <!-- Email -->
+
+                            <div class="col-12">
+
+                                <label
+                                    class="form-label"
+                                    for="bnEmail"
+                                >
+                                    Correo electrónico (opcional)
+                                </label>
+
+                                <input
+                                    type="email"
+                                    class="form-control"
+                                    id="bnEmail"
+                                    name="customer_email"
+                                    value="{{ old('customer_email', auth()->user()?->email) }}"
+                                    autocomplete="email"
+                                >
+
+                                @error('customer_email', 'buy_now')
+
+                                    <div class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </div>
+
+                                @enderror
+
+                            </div>
+
+
+                            @auth
+
+                                @if($addresses->isNotEmpty())
+
+                                    <!-- Saved addresses -->
+
+                                    <div class="col-12">
+
+                                        <label
+                                            class="form-label"
+                                            for="buyNowAddressId"
+                                        >
+                                            Dirección de entrega
+                                        </label>
+
+                                        <select
+                                            class="form-select"
+                                            id="buyNowAddressId"
+                                            name="address_id"
+                                        >
+
+                                            <option value="">
+                                                Usar una nueva dirección
+                                            </option>
+
+                                            @foreach($addresses as $address)
+
+                                                <option
+                                                    value="{{ $address->id }}"
+                                                    @selected(
+                                                        old(
+                                                            'address_id',
+                                                            $loop->first
+                                                                ? $address->id
+                                                                : null
+                                                        ) == $address->id
+                                                    )
+                                                >
+
+                                                    {{ $address->label ?: 'Dirección' }}
+
+                                                    —
+
+                                                    {{ $address->line1 }},
+                                                    {{ $address->city }}
+
+                                                    @if($address->is_default)
+
+                                                        (Predeterminada)
+
+                                                    @endif
+
+                                                </option>
+
+                                            @endforeach
+
+                                        </select>
+
+                                        <div class="form-text">
+
+                                            Tu dirección predeterminada está
+                                            seleccionada automáticamente.
+
+                                        </div>
+
+                                    </div>
+
+                                @endif
+
+                            @endauth
+
+
+                            <!-- Manual address -->
+
+                            <div
+                                id="buyNowManualAddress"
+                                class="row g-3 mt-0"
+                            >
+
+                                <!-- Address -->
+
+                                <div class="col-12">
+
+                                    <label
+                                        class="form-label"
+                                        for="bnAddress"
+                                    >
+                                        Dirección
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="bnAddress"
+                                        name="line1"
+                                        value="{{ old('line1') }}"
+                                        placeholder="Calle, avenida, número de casa"
+                                    >
+
+                                    @error('line1', 'buy_now')
+
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+
+                                    @enderror
+
+                                </div>
+
+
+                                <!-- Reference -->
+
+                                <div class="col-12">
+
+                                    <label
+                                        class="form-label"
+                                        for="bnReference"
+                                    >
+                                        Referencia de la dirección
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="bnReference"
+                                        name="line2"
+                                        value="{{ old('line2') }}"
+                                        placeholder="Punto de referencia, color de casa, portón, etc."
+                                    >
+
+                                    @error('line2', 'buy_now')
+
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+
+                                    @enderror
+
+                                </div>
+
+
+                                <!-- City -->
+
+                                <div class="col-md-7">
+
+                                    <label
+                                        class="form-label"
+                                        for="bnCity"
+                                    >
+                                        Ciudad
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="bnCity"
+                                        name="city"
+                                        value="{{ old('city') }}"
+                                    >
+
+                                    @error('city', 'buy_now')
+
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+
+                                    @enderror
+
+                                </div>
+
+
+                                <!-- Department -->
+
+                                <div class="col-md-5">
+
+                                    <label
+                                        class="form-label"
+                                        for="bnState"
+                                    >
+                                        Departamento
+                                    </label>
+
+                                    <select
+                                        class="form-select"
+                                        id="bnState"
+                                        name="state"
+                                    >
+
+                                        <option value="">
+                                            Selecciona...
+                                        </option>
+
+                                        @foreach([
+                                            'Atlántida',
+                                            'Choluteca',
+                                            'Colón',
+                                            'Comayagua',
+                                            'Copán',
+                                            'Cortés',
+                                            'El Paraíso',
+                                            'Francisco Morazán',
+                                            'Gracias a Dios',
+                                            'Intibucá',
+                                            'Islas de la Bahía',
+                                            'La Paz',
+                                            'Lempira',
+                                            'Ocotepeque',
+                                            'Olancho',
+                                            'Santa Bárbara',
+                                            'Valle',
+                                            'Yoro',
+                                        ] as $department)
+
+                                            <option
+                                                value="{{ $department }}"
+                                                @selected(
+                                                    old('state') === $department
+                                                )
+                                            >
+                                                {{ $department }}
+                                            </option>
+
+                                        @endforeach
+
+                                    </select>
+
+                                    @error('state', 'buy_now')
+
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+
+                                    @enderror
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Preferred courier -->
+
+                            <div class="col-12">
+
+                                <label class="form-label">
+
+                                    Empresa de envío preferida
+                                    (opcional)
+
+                                </label>
+
+
+                                <div class="courier-method-cards">
+
+
+                                    <!-- No preference -->
+
+                                    <label class="courier-method-card selected">
+
+                                        <input
+                                            type="radio"
+                                            name="preferred_courier"
+                                            value=""
+                                            checked
+                                        >
+
+                                        <span class="courier-method-none">
+
+                                            <i class="bi bi-shuffle"></i>
+
+                                        </span>
+
+                                        <span class="courier-method-name">
+
+                                            Sin preferencia
+
+                                        </span>
+
+                                    </label>
+
+
+                                    <!-- C807 -->
+
+                                    <label class="courier-method-card">
+
+                                        <input
+                                            type="radio"
+                                            name="preferred_courier"
+                                            value="c807"
+                                            @checked(
+                                                old('preferred_courier') === 'c807'
+                                            )
+                                        >
+
+                                        <img
+                                            src="{{ asset('storefront/img/c807.png') }}"
+                                            alt="C807 Express"
+                                        >
+
+                                    </label>
+
+
+                                    <!-- Cargo Expreso -->
+
+                                    <label class="courier-method-card">
+
+                                        <input
+                                            type="radio"
+                                            name="preferred_courier"
+                                            value="cargo_expreso"
+                                            @checked(
+                                                old('preferred_courier') === 'cargo_expreso'
+                                            )
+                                        >
+
+                                        <img
+                                            src="{{ asset('storefront/img/caex.png') }}"
+                                            alt="Cargo Expreso"
+                                        >
+
+                                    </label>
+
+
+                                    <!-- Forza -->
+
+                                    <label class="courier-method-card">
+
+                                        <input
+                                            type="radio"
+                                            name="preferred_courier"
+                                            value="forza_delivery"
+                                            @checked(
+                                                old('preferred_courier') === 'forza_delivery'
+                                            )
+                                        >
+
+                                        <img
+                                            src="{{ asset('storefront/img/forza.png') }}"
+                                            alt="Forza Delivery"
+                                        >
+
+                                    </label>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Payment -->
+
+                        <div class="buy-now-payment-note mt-3">
+
+                            <i class="bi bi-cash-coin"></i>
+
+                            Pago contra entrega —
+                            pagas en efectivo cuando recibes tu pedido.
+
+                        </div>
+
+
+                        <!-- Terms -->
+
+                        <div class="form-check mt-3">
+
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="buyNowAcceptTerms"
+                                name="accept_terms"
+                                value="1"
+                                @checked(old('accept_terms'))
+                                required
+                            >
+
+                            <label
+                                class="form-check-label"
+                                for="buyNowAcceptTerms"
+                            >
+
+                                Acepto los términos y condiciones y
+                                la política de privacidad.
+
+                            </label>
+
+                            @error('accept_terms', 'buy_now')
+
+                                <div class="invalid-feedback d-block">
+
+                                    {{ $message }}
+
+                                </div>
+
+                            @enderror
+
+                        </div>
+
+
+                        <!-- Submit -->
+
+                        <button
+                            type="submit"
+                            id="buyNowSubmitBtn"
+                            class="btn-place-order w-100 mt-3"
+                        >
+
+                            <i class="bi bi-lock-fill"></i>
+
+                            Confirmar pedido
+
+                        </button>
+
+
+                        <p class="checkout-secure-note text-center mt-2">
+
+                            <i class="bi bi-shield-check"></i>
+
+                            Tus datos están protegidos
+
+                        </p>
+
+                    </form>
 
                 </div>
 
@@ -745,9 +1430,6 @@
         </div>
 
     </div>
-
-</div>
-
 
 @endsection
 
@@ -855,6 +1537,570 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     }
+
+
+        /*
+     * ========================================
+     * BUY NOW
+     * ========================================
+     */
+
+    const buyNowButton =
+        document.querySelector('[data-buy-now]');
+
+    const buyNowForm =
+        document.getElementById('buyNowForm');
+
+    const buyNowAddressSelect =
+        document.getElementById('buyNowAddressId');
+
+    const buyNowManualAddress =
+        document.getElementById('buyNowManualAddress');
+
+    const buyNowVariantId =
+        document.getElementById('buyNowVariantId');
+
+    const buyNowQtyInput =
+        document.getElementById('buyNowQtyInput');
+
+    const buyNowQty =
+        document.getElementById('buyNowQty');
+
+    const buyNowUnitPrice =
+        document.getElementById('buyNowUnitPrice');
+
+    const buyNowVariantSummary =
+        document.getElementById('buyNowVariantSummary');
+
+
+    /*
+     * -------------------------------------------------------------
+     * Address selection
+     * -------------------------------------------------------------
+     *
+     * Logged-in user with saved address:
+     *     manual fields are hidden and disabled.
+     *
+     * New address:
+     *     manual fields become active.
+     *
+     * Guest:
+     *     manual fields are always active.
+     */
+
+    function syncBuyNowAddress() {
+
+        if (!buyNowManualAddress) {
+            return;
+        }
+
+        const usingSavedAddress =
+            buyNowAddressSelect &&
+            buyNowAddressSelect.value !== '';
+
+        if (usingSavedAddress) {
+
+            buyNowManualAddress.style.display =
+                'none';
+
+        } else {
+
+            buyNowManualAddress.style.display =
+                '';
+
+        }
+
+
+        const fields =
+            buyNowManualAddress.querySelectorAll(
+                'input, select'
+            );
+
+        fields.forEach(function (field) {
+
+            field.disabled =
+                usingSavedAddress;
+
+            field.required =
+                !usingSavedAddress;
+
+        });
+    }
+
+
+    if (buyNowAddressSelect) {
+
+        buyNowAddressSelect.addEventListener(
+            'change',
+            syncBuyNowAddress
+        );
+
+        syncBuyNowAddress();
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Resolve selected variant
+     * -------------------------------------------------------------
+     *
+     * Reuse the same variant resolver already used by the
+     * add-to-cart implementation.
+     */
+
+    function resolveBuyNowVariant() {
+
+        if (!buyNowButton) {
+            return null;
+        }
+
+
+        /*
+         * Product has no attribute selectors.
+         *
+         * The controller still requires the correct variant ID
+         * when the product has variants.
+         */
+
+        if (buyNowButton.dataset.variantId) {
+
+            return {
+                id: buyNowButton.dataset.variantId,
+            };
+        }
+
+
+        if (
+            typeof cartResolveVariant ===
+            'function'
+        ) {
+
+            return cartResolveVariant(
+                buyNowButton
+            );
+        }
+
+
+        return null;
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Selected variant summary
+     * -------------------------------------------------------------
+     */
+
+    function updateBuyNowVariantSummary() {
+
+        if (!buyNowVariantSummary) {
+            return;
+        }
+
+        const groups =
+            document.querySelectorAll(
+                '.variant-group[data-variant-group]'
+            );
+
+        const values = [];
+
+
+        groups.forEach(function (group) {
+
+            const active =
+                group.querySelector(
+                    '.size-btn.active[data-value]'
+                );
+
+            if (active) {
+
+                values.push(
+                    active.dataset.value
+                );
+
+            }
+
+        });
+
+
+        if (values.length) {
+
+            buyNowVariantSummary.textContent =
+                values.join(' · ');
+
+        } else {
+
+            buyNowVariantSummary.textContent =
+                'Producto seleccionado';
+
+        }
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Update Buy Now values
+     * -------------------------------------------------------------
+     */
+
+    function syncBuyNowValues() {
+
+        if (!buyNowForm) {
+            return;
+        }
+
+
+        /*
+         * Quantity
+         */
+
+        const productQtyInput =
+            document.querySelector(
+                '.purchase-row .qty-input'
+            );
+
+        let quantity = 1;
+
+        if (productQtyInput) {
+
+            quantity =
+                parseInt(
+                    productQtyInput.value,
+                    10
+                ) || 1;
+
+        }
+
+        quantity =
+            Math.max(1, quantity);
+
+
+        if (buyNowQtyInput) {
+
+            buyNowQtyInput.value =
+                quantity;
+
+        }
+
+
+        if (buyNowQty) {
+
+            buyNowQty.textContent =
+                quantity;
+
+        }
+
+
+        /*
+         * Variant
+         */
+
+        const variant =
+            resolveBuyNowVariant();
+
+
+        if (buyNowVariantId) {
+
+            buyNowVariantId.value =
+                variant
+                    ? variant.id
+                    : '';
+
+        }
+
+
+        /*
+         * Variant summary
+         */
+
+        updateBuyNowVariantSummary();
+
+
+        /*
+         * Display price.
+         *
+         * This is ONLY a visual value.
+         *
+         * The backend resolves the actual price again.
+         */
+
+        if (
+            variant &&
+            variant.price &&
+            buyNowUnitPrice
+        ) {
+
+            buyNowUnitPrice.textContent =
+                variant.price;
+
+        } else if (
+            buyNowUnitPrice &&
+            buyNowButton
+        ) {
+
+            buyNowUnitPrice.textContent =
+                buyNowButton.dataset.productPrice
+                || '';
+
+        }
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Open modal
+     * -------------------------------------------------------------
+     */
+
+    if (buyNowButton) {
+
+        buyNowButton.addEventListener(
+            'click',
+            function () {
+
+                syncBuyNowValues();
+
+                syncBuyNowAddress();
+
+            }
+        );
+
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Quantity changes
+     * -------------------------------------------------------------
+     */
+
+    const productQtyInput =
+        document.querySelector(
+            '.purchase-row .qty-input'
+        );
+
+    if (productQtyInput) {
+
+        productQtyInput.addEventListener(
+            'change',
+            function () {
+
+                syncBuyNowValues();
+
+            }
+        );
+
+        productQtyInput.addEventListener(
+            'input',
+            function () {
+
+                syncBuyNowValues();
+
+            }
+        );
+
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Variant changes
+     * -------------------------------------------------------------
+     *
+     * Existing variant click handlers run on the same event.
+     * setTimeout ensures the active class has been updated before
+     * Buy Now reads it.
+     */
+
+    document
+        .querySelectorAll(
+            '.variant-swatches button, .variant-sizes button'
+        )
+        .forEach(function (button) {
+
+            button.addEventListener(
+                'click',
+                function () {
+
+                    setTimeout(
+                        function () {
+
+                            syncBuyNowValues();
+
+                        },
+                        0
+                    );
+
+                }
+            );
+
+        });
+
+
+    /*
+     * -------------------------------------------------------------
+     * Courier card visual selection
+     * -------------------------------------------------------------
+     */
+
+    document
+        .querySelectorAll(
+            '#buyNowForm .courier-method-card'
+        )
+        .forEach(function (card) {
+
+            card.addEventListener(
+                'click',
+                function () {
+
+                    document
+                        .querySelectorAll(
+                            '#buyNowForm .courier-method-card'
+                        )
+                        .forEach(function (item) {
+
+                            item.classList.remove(
+                                'selected'
+                            );
+
+                        });
+
+
+                    card.classList.add(
+                        'selected'
+                    );
+
+                }
+            );
+
+        });
+
+
+    /*
+     * -------------------------------------------------------------
+     * Submit
+     * -------------------------------------------------------------
+     */
+
+    if (buyNowForm) {
+
+        buyNowForm.addEventListener(
+            'submit',
+            function (event) {
+
+                /*
+                 * Update everything immediately before POST.
+                 */
+                syncBuyNowValues();
+
+                syncBuyNowAddress();
+
+
+                /*
+                 * If the product has variants, the customer must
+                 * have selected a valid combination.
+                 */
+
+                if (
+                    buyNowButton &&
+                    buyNowButton.dataset.hasVariants ===
+                        '1'
+                ) {
+
+                    const variant =
+                        resolveBuyNowVariant();
+
+
+                    if (!variant) {
+
+                        event.preventDefault();
+
+
+                        if (
+                            typeof cartToast ===
+                            'function'
+                        ) {
+
+                            cartToast(
+                                'Selecciona una opción del producto antes de continuar.',
+                                'danger'
+                            );
+
+                        } else {
+
+                            alert(
+                                'Selecciona una opción del producto antes de continuar.'
+                            );
+
+                        }
+
+                        return;
+
+                    }
+
+                }
+
+
+                /*
+                 * Prevent double-click / duplicate orders.
+                 */
+
+                const submitButton =
+                    document.getElementById(
+                        'buyNowSubmitBtn'
+                    );
+
+
+                if (submitButton) {
+
+                    submitButton.disabled =
+                        true;
+
+                    submitButton.innerHTML =
+                        '<i class="bi bi-arrow-repeat"></i> Procesando...';
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * Re-open modal after validation error
+     * -------------------------------------------------------------
+     */
+
+    @if($errors->buy_now->any())
+
+        const buyNowModalElement =
+            document.getElementById(
+                'buyNowModal'
+            );
+
+
+        if (
+            buyNowModalElement &&
+            typeof bootstrap !==
+                'undefined'
+        ) {
+
+            const buyNowModal =
+                bootstrap.Modal.getOrCreateInstance(
+                    buyNowModalElement
+                );
+
+            syncBuyNowValues();
+
+            syncBuyNowAddress();
+
+            buyNowModal.show();
+
+        }
+
+    @endif
 
 });
 </script>

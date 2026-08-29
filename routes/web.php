@@ -8,9 +8,17 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OffersController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\BuyNowController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
+
+
+/*
+|--------------------------------------------------------------------------
+| Storefront
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
@@ -30,16 +38,14 @@ Route::get('/ofertas', [OffersController::class, 'index'])
 | Carrito
 |--------------------------------------------------------------------------
 |
-| Deliberately NOT behind `auth`: this store sells pago contra entrega and
-| guest checkout is the primary path. A guest is identified by the
-| `cart_token` cookie (see CartService); on login/register their cart is
-| merged into the customer's own.
+| Deliberately NOT behind auth.
 |
-| Everything except index() answers in JSON for the fetch calls in
-| public/storefront/js/script.js.
+| Guests can use the cart and continue to checkout without logging in.
+|
 */
 
 Route::prefix('carrito')->name('cart.')->group(function () {
+
     Route::get('/', [CartController::class, 'index'])
         ->name('index');
 
@@ -64,66 +70,130 @@ Route::prefix('carrito')->name('cart.')->group(function () {
 |--------------------------------------------------------------------------
 | Storefront authentication
 |--------------------------------------------------------------------------
-|
-| Customer-facing login / signup / logout on the shared `web` guard.
-| Admin isolation is enforced by User::canAccessPanel() (customers are
-| denied /admin) rather than by a separate guard.
 */
 
 Route::middleware('guest')->group(function () {
-    Route::get('/registro', [RegisteredUserController::class, 'create'])
-        ->name('register');
-    Route::post('/registro', [RegisteredUserController::class, 'store']);
 
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::get('/registro', [
+        RegisteredUserController::class,
+        'create',
+    ])->name('register');
+
+    Route::post('/registro', [
+        RegisteredUserController::class,
+        'store',
+    ]);
+
+    Route::get('/login', [
+        AuthenticatedSessionController::class,
+        'create',
+    ])->name('login');
+
+    Route::post('/login', [
+        AuthenticatedSessionController::class,
+        'store',
+    ]);
 });
 
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+
+Route::post('/logout', [
+    AuthenticatedSessionController::class,
+    'destroy',
+])
     ->middleware('auth')
     ->name('logout');
+
 
 /*
 |--------------------------------------------------------------------------
 | Mi cuenta
 |--------------------------------------------------------------------------
-|
-| Customer account area: order history, saved addresses and personal
-| details. Guests hitting these routes are sent to /login and returned
-| here afterwards by the login controller's redirect()->intended().
 */
 
 Route::middleware('auth')
     ->prefix('mi-cuenta')
     ->name('account.')
     ->group(function () {
-        Route::get('/', [AccountController::class, 'index'])
-            ->name('index');
 
-        Route::put('/perfil', [AccountController::class, 'updateProfile'])
-            ->name('profile.update');
+        Route::get('/', [
+            AccountController::class,
+            'index',
+        ])->name('index');
 
-        Route::post('/direcciones', [AddressController::class, 'store'])
-            ->name('addresses.store');
+        Route::put('/perfil', [
+            AccountController::class,
+            'updateProfile',
+        ])->name('profile.update');
 
-        Route::put('/direcciones/{address}', [AddressController::class, 'update'])
-            ->name('addresses.update');
+        Route::post('/direcciones', [
+            AddressController::class,
+            'store',
+        ])->name('addresses.store');
 
-        Route::delete('/direcciones/{address}', [AddressController::class, 'destroy'])
-            ->name('addresses.destroy');
+        Route::put('/direcciones/{address}', [
+            AddressController::class,
+            'update',
+        ])->name('addresses.update');
+
+        Route::delete('/direcciones/{address}', [
+            AddressController::class,
+            'destroy',
+        ])->name('addresses.destroy');
     });
 
 
+/*
+|--------------------------------------------------------------------------
+| Normal cart checkout
+|--------------------------------------------------------------------------
+*/
 
-Route::prefix('checkout')->name('checkout.')->group(function () {
-    Route::get('/', [CheckoutController::class, 'index'])
-        ->name('index');
+Route::prefix('checkout')
+    ->name('checkout.')
+    ->group(function () {
 
-    Route::post('/', [CheckoutController::class, 'store'])
-        ->middleware('throttle:10,1')
-        ->name('store');
+        Route::get('/', [
+            CheckoutController::class,
+            'index',
+        ])->name('index');
 
-    Route::get('/confirmacion', [CheckoutController::class, 'confirmation'])
-        ->name('confirmation');
-});
+        Route::post('/', [
+            CheckoutController::class,
+            'store',
+        ])
+            ->middleware('throttle:10,1')
+            ->name('store');
+
+        // Route::get('/confirmacion', [
+        //     CheckoutController::class,
+        //     'confirmation',
+        // ])->name('confirmation');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Comprar ahora
+|--------------------------------------------------------------------------
+|
+| Direct checkout from the product page.
+|
+| This is intentionally PUBLIC because:
+|
+| - guests can purchase
+| - logged-in users can purchase
+|
+| The controller determines whether the customer is authenticated.
+|
+*/
+Route::get('/confirmacion', [
+    CheckoutController::class,
+    'confirmation',
+])->name('checkout.confirmation');
+
+Route::post('/comprar-ahora', [
+    BuyNowController::class,
+    'store',
+])
+    ->middleware('throttle:10,1')
+    ->name('buy-now.store');
