@@ -10,6 +10,8 @@ use App\Services\CheckoutService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\Coupon;
+
 
 /**
  * Full cart checkout (checkout.html ported to Blade). Deliberately NOT
@@ -104,5 +106,32 @@ class CheckoutController extends Controller
         }
 
         return view('checkout-confirmation', ['order' => $order]);
+    }
+
+    public function previewCoupon(Request $request)
+    {
+        $validated = $request->validate([
+            'coupon_code' => ['required', 'string', 'max:40'],
+            'subtotal'    => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $coupon = Coupon::where('code', strtoupper(trim($validated['coupon_code'])))->first();
+
+        if (! $coupon || ! $coupon->isValid()) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Cupón inválido o expirado.',
+            ], 422);
+        }
+
+        $subtotal = (float) $validated['subtotal'];
+        $discount = $coupon->discountFor($subtotal);
+
+        return response()->json([
+            'ok'                => true,
+            'couponCode'        => $coupon->code,
+            'discountValue'     => $discount,
+            'discountFormatted' => config('store.currency_symbol', 'L.') . ' ' . number_format($discount, 2),
+        ]);
     }
 }

@@ -216,20 +216,20 @@
                 <label class="form-label">Empresa de envío preferida (opcional)</label>
                 <div class="courier-method-cards">
                   <label class="courier-method-card selected">
-                    <input type="radio" name="preferred_courier" value="" checked>
+                    <input type="radio" name="preferred_courier" value="" onchange="deSolucionesSelectCourier(this)" checked>
                     <span class="courier-method-none"><i class="bi bi-shuffle"></i></span>
                     <span class="courier-method-name">Sin preferencia</span>
                   </label>
                   <label class="courier-method-card">
-                    <input type="radio" name="preferred_courier" value="c807">
+                    <input type="radio" name="preferred_courier" value="c807" onchange="deSolucionesSelectCourier(this)">
                     <img src="{{ asset('storefront/img/c807.png') }}" alt="C807 Express">
                   </label>
                   <label class="courier-method-card">
-                    <input type="radio" name="preferred_courier" value="cargo_expreso">
+                    <input type="radio" name="preferred_courier" value="cargo_expreso" onchange="deSolucionesSelectCourier(this)">
                     <img src="{{ asset('storefront/img/caex.png') }}" alt="Cargo Expreso">
                   </label>
                   <label class="courier-method-card">
-                    <input type="radio" name="preferred_courier" value="forza_delivery">
+                    <input type="radio" name="preferred_courier" value="forza_delivery" onchange="deSolucionesSelectCourier(this)">
                     <img src="{{ asset('storefront/img/forza.png') }}" alt="Forza Delivery">
                   </label>
                 </div>
@@ -290,7 +290,7 @@
 
             <hr>
 
-            <div class="col-12 mb-3">
+            {{-- <div class="col-12 mb-3">
               <label class="form-label" for="couponCode">¿Tienes un cupón?</label>
               <input type="text" class="form-control @error('coupon_code') is-invalid @enderror" id="couponCode" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="CÓDIGO">
               @error('coupon_code')
@@ -312,7 +312,41 @@
             <div class="summary-row summary-total">
               <span>Total</span>
               <span id="checkoutTotal">{{ $formatMoney($summary['subtotal'] + $standardShipping) }}</span>
-            </div>
+            </div> --}}
+            <div class="col-12 mb-3">
+  <label class="form-label" for="couponCode">¿Tienes un cupón?</label>
+  <div class="d-flex gap-2">
+    <input type="text" class="form-control @error('coupon_code') is-invalid @enderror"
+           id="couponCode" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="CÓDIGO">
+    <button type="button" id="applyCouponBtn" class="btn-outline-navy" style="white-space:nowrap;">
+      Aplicar
+    </button>
+  </div>
+  <div id="couponFeedback" class="field-hint" style="display:none;"></div>
+  @error('coupon_code')
+    <div class="invalid-feedback d-block">{{ $message }}</div>
+  @enderror
+</div>
+
+<div class="summary-row">
+  <span>Subtotal</span>
+  <span id="checkoutSubtotal" data-value="{{ $summary['subtotal'] }}">{{ $summary['subtotalFormatted'] }}</span>
+</div>
+<div class="summary-row" id="couponDiscountRow" style="display:none;">
+  <span>Descuento <span id="couponDiscountLabel"></span></span>
+  <span id="checkoutDiscountAmount" class="text-success"></span>
+</div>
+<div class="summary-row">
+  <span>Envío</span>
+  <span id="checkoutShippingCost" data-value="{{ $standardShipping }}">
+    {{ $standardShipping > 0 ? $formatMoney($standardShipping) : 'Gratis' }}
+  </span>
+</div>
+<hr>
+<div class="summary-row summary-total">
+  <span>Total</span>
+  <span id="checkoutTotal">{{ $formatMoney($summary['subtotal'] + $standardShipping) }}</span>
+</div>
 
             <label class="terms-check">
               <input type="checkbox" name="accept_terms" value="1" required @checked(old('accept_terms'))>
@@ -352,6 +386,14 @@
 
   // Recomputes the visible total when the shipping method changes. The
   // server always recomputes this for real on submit - this is display only.
+
+  function deSolucionesSelectCourier(radio) {
+  document.querySelectorAll('.courier-method-card').forEach(function (card) {
+    card.classList.remove('selected');
+  });
+  var card = radio.closest('.courier-method-card');
+  if (card) card.classList.add('selected');
+}
   function deSolucionesRecalcShipping(radio) {
     document.querySelectorAll('.shipping-method-option').forEach(function (el) {
       el.classList.toggle('selected', el.contains(radio) || el.querySelector('input') === radio);
@@ -368,6 +410,101 @@
     document.getElementById('checkoutShippingCost').textContent = format(cost);
     document.getElementById('checkoutTotal').textContent = currency + ' ' + (subtotal + cost).toLocaleString('es-HN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   }
+
+  function deSolucionesAppliedDiscount() {
+  var row = document.getElementById('couponDiscountRow');
+  if (!row || row.style.display === 'none') return 0;
+  return parseFloat(row.dataset.value || '0');
+}
+
+function deSolucionesFormat(v) {
+  var currency = '{{ $currency }}';
+  return currency + ' ' + v.toLocaleString('es-HN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function deSolucionesRecalcTotal() {
+  var subtotal = parseFloat(document.getElementById('checkoutSubtotal').dataset.value || '0');
+  var discount = deSolucionesAppliedDiscount();
+  var shipping = parseFloat(document.getElementById('checkoutShippingCost').dataset.value || '0');
+  document.getElementById('checkoutTotal').textContent = deSolucionesFormat(Math.max(0, subtotal - discount) + shipping);
+}
+
+// Existing function — extended to call the shared recalc so an applied
+// discount survives a shipping-method change instead of being dropped.
+function deSolucionesRecalcShipping(radio) {
+  document.querySelectorAll('.shipping-method-option').forEach(function (el) {
+    el.classList.toggle('selected', el.querySelector('input') === radio);
+  });
+  var cost = parseFloat(radio.dataset.cost || '0');
+  document.getElementById('checkoutShippingCost').dataset.value = cost;
+  document.getElementById('checkoutShippingCost').textContent = cost > 0 ? deSolucionesFormat(cost) : 'Gratis';
+  deSolucionesRecalcTotal();
+}
+
+document.getElementById('applyCouponBtn').addEventListener('click', function () {
+  var btn = this;
+  var codeInput = document.getElementById('couponCode');
+  var code = codeInput.value.trim();
+  var feedback = document.getElementById('couponFeedback');
+  var discountRow = document.getElementById('couponDiscountRow');
+
+  if (!code) {
+    feedback.textContent = 'Ingresa un código de cupón.';
+    feedback.className = 'field-hint text-danger';
+    feedback.style.display = '';
+    return;
+  }
+
+  btn.disabled = true;
+  var originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i>';
+
+  fetch('{{ route("checkout.preview-coupon") }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+    },
+    body: JSON.stringify({
+      coupon_code: code,
+      subtotal: parseFloat(document.getElementById('checkoutSubtotal').dataset.value || '0'),
+    }),
+  })
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (result) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+
+      if (!result.ok || !result.data.ok) {
+        feedback.textContent = (result.data && result.data.message) || 'Cupón inválido o expirado.';
+        feedback.className = 'field-hint text-danger';
+        feedback.style.display = '';
+        discountRow.style.display = 'none';
+        discountRow.dataset.value = 0;
+        deSolucionesRecalcTotal();
+        return;
+      }
+
+      feedback.textContent = '¡Cupón aplicado correctamente!';
+      feedback.className = 'field-hint text-success';
+      feedback.style.display = '';
+
+      document.getElementById('couponDiscountLabel').textContent = '(' + result.data.couponCode + ')';
+      document.getElementById('checkoutDiscountAmount').textContent = '- ' + result.data.discountFormatted;
+      discountRow.dataset.value = result.data.discountValue;
+      discountRow.style.display = '';
+
+      deSolucionesRecalcTotal();
+    })
+    .catch(function () {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      feedback.textContent = 'Sin conexión. Intenta de nuevo.';
+      feedback.className = 'field-hint text-danger';
+      feedback.style.display = '';
+    });
+});
 </script>
 @endpush
 

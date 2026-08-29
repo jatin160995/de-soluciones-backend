@@ -130,7 +130,7 @@
           </div>
 
           {{-- /checkout is the next step and is not built yet --}}
-          <a href="/checkout" class="btn-checkout">Proceder al pago <i class="bi bi-arrow-right"></i></a>
+          <a href="{{ url('/checkout')}}" class="btn-checkout">Proceder al pago <i class="bi bi-arrow-right"></i></a>
 
           <div class="summary-payment-icons">
             <span><i class="bi bi-cash-coin"></i> Contra entrega</span>

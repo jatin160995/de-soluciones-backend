@@ -197,3 +197,6 @@ Route::post('/comprar-ahora', [
 ])
     ->middleware('throttle:10,1')
     ->name('buy-now.store');
+
+Route::post('/checkout/preview-coupon', [CheckoutController::class, 'previewCoupon'])
+    ->name('checkout.preview-coupon');

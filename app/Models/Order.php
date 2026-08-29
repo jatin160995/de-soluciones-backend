@@ -20,6 +20,7 @@ class Order extends Model
         'status',
         'subtotal',
         'shipping_cost',
+
         'discount_percent',
         'discount_amount',
         'total',
