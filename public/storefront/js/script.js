@@ -507,50 +507,110 @@ if (document.getElementById('productVariants')) {
 }
 // Buy Now modal (producto.html)
 const buyNowModal = document.getElementById('buyNowModal');
-if (buyNowModal) {
+if (buyNowForm) {
 
-  buyNowModal.addEventListener('show.bs.modal', function () {
-    const qtyInput = document.querySelector('.qty-stepper .qty-input');
-    const qty = qtyInput ? qtyInput.value : '1';
-    const colorEl = document.querySelector('.variant-swatches .swatch.active');
-    const sizeEl = document.querySelector('.variant-sizes .size-btn.active');
+  const buyNowSubmitBtn = document.getElementById('buyNowSubmitBtn');
+  const buyNowSubmitDefaultHtml = buyNowSubmitBtn ? buyNowSubmitBtn.innerHTML : '';
 
-    const qtySummary = document.getElementById('buyNowQty');
-    const qtyHidden = document.getElementById('buyNowQtyInput');
-    if (qtySummary) qtySummary.textContent = qty;
-    if (qtyHidden) qtyHidden.value = qty;
+  function resetBuyNowSubmitBtn() {
+    if (!buyNowSubmitBtn) return;
+    buyNowSubmitBtn.disabled = false;
+    buyNowSubmitBtn.innerHTML = buyNowSubmitDefaultHtml;
+  }
 
-    const colorVal = colorEl ? colorEl.getAttribute('data-value') : '';
-    const sizeVal = sizeEl ? sizeEl.getAttribute('data-value') : '';
-    const variantSummary = document.getElementById('buyNowVariantSummary');
-    const colorHidden = document.getElementById('buyNowColorInput');
-    const sizeHidden = document.getElementById('buyNowSizeInput');
-    if (variantSummary) variantSummary.textContent = [colorVal, sizeVal].filter(Boolean).join(' · ');
-    if (colorHidden) colorHidden.value = colorVal;
-    if (sizeHidden) sizeHidden.value = sizeVal;
-  });
+  buyNowForm.addEventListener('submit', function (event) {
 
-  const buyNowForm = document.getElementById('buyNowForm');
-  if (buyNowForm) {
-    buyNowForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (!buyNowForm.checkValidity()) {
-        buyNowForm.classList.add('was-validated');
-        const firstInvalid = buyNowForm.querySelector(':invalid');
-        if (firstInvalid) firstInvalid.focus();
+    syncBuyNowValues();
+    syncBuyNowAddress();
+
+    // Native required-field check (accept_terms, name, whatsapp, etc.)
+    // `novalidate` on the <form> only suppresses the browser's own UI —
+    // checkValidity() still evaluates the constraints correctly.
+    if (!buyNowForm.checkValidity()) {
+      event.preventDefault();
+      buyNowForm.classList.add('was-validated');
+      buyNowForm.reportValidity(); // shows the native bubble on the first invalid field
+      resetBuyNowSubmitBtn();       // ← guarantees it's never left stuck disabled
+      return;
+    }
+
+    // Variant check (unchanged)
+    if (buyNowButton && buyNowButton.dataset.hasVariants === '1') {
+      const variant = resolveBuyNowVariant();
+      if (!variant) {
+        event.preventDefault();
+        resetBuyNowSubmitBtn();
+        if (typeof cartToast === 'function') {
+          cartToast('Selecciona una opción del producto antes de continuar.', 'danger');
+        } else {
+          alert('Selecciona una opción del producto antes de continuar.');
+        }
         return;
       }
-      const submitBtn = document.getElementById('buyNowSubmitBtn');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Procesando pedido...';
+    }
+
+    // Valid → let it POST natively.
+    if (buyNowSubmitBtn) {
+      buyNowSubmitBtn.disabled = true;
+      buyNowSubmitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Procesando...';
+    }
+  });
+
+  // Belt-and-suspenders: if the checkbox gets checked after a blocked
+  // attempt, clear the stale invalid styling immediately.
+  const buyNowTermsCheckbox = document.getElementById('buyNowAcceptTerms');
+  if (buyNowTermsCheckbox) {
+    buyNowTermsCheckbox.addEventListener('change', function () {
+      if (buyNowTermsCheckbox.checkValidity()) {
+        resetBuyNowSubmitBtn();
       }
-      setTimeout(function () {
-        window.location.href = 'verificar-pedido.html';
-      }, 900);
     });
   }
 }
+// if (buyNowModal) {
+
+//   buyNowModal.addEventListener('show.bs.modal', function () {
+//     const qtyInput = document.querySelector('.qty-stepper .qty-input');
+//     const qty = qtyInput ? qtyInput.value : '1';
+//     const colorEl = document.querySelector('.variant-swatches .swatch.active');
+//     const sizeEl = document.querySelector('.variant-sizes .size-btn.active');
+
+//     const qtySummary = document.getElementById('buyNowQty');
+//     const qtyHidden = document.getElementById('buyNowQtyInput');
+//     if (qtySummary) qtySummary.textContent = qty;
+//     if (qtyHidden) qtyHidden.value = qty;
+
+//     const colorVal = colorEl ? colorEl.getAttribute('data-value') : '';
+//     const sizeVal = sizeEl ? sizeEl.getAttribute('data-value') : '';
+//     const variantSummary = document.getElementById('buyNowVariantSummary');
+//     const colorHidden = document.getElementById('buyNowColorInput');
+//     const sizeHidden = document.getElementById('buyNowSizeInput');
+//     if (variantSummary) variantSummary.textContent = [colorVal, sizeVal].filter(Boolean).join(' · ');
+//     if (colorHidden) colorHidden.value = colorVal;
+//     if (sizeHidden) sizeHidden.value = sizeVal;
+//   });
+
+//   const buyNowForm = document.getElementById('buyNowForm');
+//   if (buyNowForm) {
+//     buyNowForm.addEventListener('submit', function (e) {
+//       e.preventDefault();
+//       if (!buyNowForm.checkValidity()) {
+//         buyNowForm.classList.add('was-validated');
+//         const firstInvalid = buyNowForm.querySelector(':invalid');
+//         if (firstInvalid) firstInvalid.focus();
+//         return;
+//       }
+//       const submitBtn = document.getElementById('buyNowSubmitBtn');
+//       if (submitBtn) {
+//         submitBtn.disabled = true;
+//         submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Procesando pedido...';
+//       }
+//       setTimeout(function () {
+//         window.location.href = 'verificar-pedido.html';
+//       }, 900);
+//     });
+//   }
+// }
 
 /*
  * ===== Cart Page (/carrito) =====
