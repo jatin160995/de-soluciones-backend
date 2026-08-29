@@ -60,7 +60,7 @@
       </div>
     @enderror
 
-    <form id="checkoutForm" class="checkout-form" novalidate action="{{ route('checkout.store') }}" method="POST">
+    <form id="checkoutForm" class="checkout-form" action="{{ route('checkout.store') }}" method="POST">
       @csrf
       <div class="row g-4">
 
@@ -117,10 +117,14 @@
               </div>
             @endif
 
-            <div id="manualAddressFields" class="row g-3" @if($addresses->isNotEmpty() && old('address_id', $defaultAddress?->id ?? '') !== '') style="display:none;" @endif>
+            @php
+              $manualFieldsHidden = $addresses->isNotEmpty() && old('address_id', $defaultAddress?->id ?? '') !== '';
+            @endphp
+
+            <div id="manualAddressFields" class="row g-3" @if($manualFieldsHidden) style="display:none;" @endif>
               <div class="col-md-6">
                 <label class="form-label" for="recipientName">Nombre de quien recibe</label>
-                <input type="text" class="form-control @error('recipient_name') is-invalid @enderror" id="recipientName" name="recipient_name" value="{{ old('recipient_name') }}" required>
+                <input type="text" class="form-control @error('recipient_name') is-invalid @enderror" id="recipientName" name="recipient_name" value="{{ old('recipient_name') }}" @unless($manualFieldsHidden) required @endunless>
                 @error('recipient_name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
               </div>
               <div class="col-md-6">
@@ -133,22 +137,22 @@
               </div>
               <div class="col-12">
                 <label class="form-label" for="addressLine1">Dirección</label>
-                <input type="text" class="form-control @error('line1') is-invalid @enderror" id="addressLine1" name="line1" value="{{ old('line1') }}" placeholder="Calle, avenida, número de casa" required>
+                <input type="text" class="form-control @error('line1') is-invalid @enderror" id="addressLine1" name="line1" value="{{ old('line1') }}" placeholder="Calle, avenida, número de casa" @unless($manualFieldsHidden) required @endunless>
                 @error('line1')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
               </div>
               <div class="col-12">
                 <label class="form-label" for="addressLine2">Referencia de la dirección</label>
-                <input type="text" class="form-control @error('line2') is-invalid @enderror" id="addressLine2" name="line2" value="{{ old('line2') }}" placeholder="Punto de referencia, color de casa, portón, etc." required>
+                <input type="text" class="form-control @error('line2') is-invalid @enderror" id="addressLine2" name="line2" value="{{ old('line2') }}" placeholder="Punto de referencia, color de casa, portón, etc." @unless($manualFieldsHidden) required @endunless>
                 @error('line2')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
               </div>
               <div class="col-md-5">
                 <label class="form-label" for="addressCity">Ciudad</label>
-                <input type="text" class="form-control @error('city') is-invalid @enderror" id="addressCity" name="city" value="{{ old('city') }}" required>
+                <input type="text" class="form-control @error('city') is-invalid @enderror" id="addressCity" name="city" value="{{ old('city') }}" @unless($manualFieldsHidden) required @endunless>
                 @error('city')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="addressState">Departamento</label>
-                <select class="form-select @error('state') is-invalid @enderror" id="addressState" name="state" required>
+                <select class="form-select @error('state') is-invalid @enderror" id="addressState" name="state" @unless($manualFieldsHidden) required @endunless>
                   <option value="">Selecciona...</option>
                   @foreach(['Atlántida','Choluteca','Colón','Comayagua','Copán','Cortés','El Paraíso','Francisco Morazán','Gracias a Dios','Intibucá','Islas de la Bahía','La Paz','Lempira','Ocotepeque','Olancho','Santa Bárbara','Valle','Yoro'] as $dept)
                     <option @selected(old('state') === $dept)>{{ $dept }}</option>
@@ -321,9 +325,18 @@
 @push('scripts')
 <script>
   // Saved-address select: "Usar otra dirección" reveals the manual fields.
+  // The required attribute has to move with it - a required field left
+  // inside a display:none container silently blocks the whole form in
+  // Chrome (it can't focus a hidden field to show the validation message).
   function deSolucionesToggleAddressFields(select) {
     var manual = document.getElementById('manualAddressFields');
-    manual.style.display = select.value === '' ? '' : 'none';
+    var usingNew = select.value === '';
+    manual.style.display = usingNew ? '' : 'none';
+
+    ['recipientName', 'addressLine1', 'addressLine2', 'addressCity', 'addressState'].forEach(function (id) {
+      var field = document.getElementById(id);
+      if (field) field.required = usingNew;
+    });
   }
 
   // Recomputes the visible total when the shipping method changes. The

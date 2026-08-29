@@ -726,74 +726,74 @@ if (cartItemsList) {
 
 // ===== Checkout Page (checkout.html) =====
 const checkoutForm = document.getElementById('checkoutForm');
-if (checkoutForm) {
+// if (checkoutForm) {
 
-  // Still the mockup's formatter. When checkout is ported this has to follow
-  // the storefront convention the cart now uses (L. 1,520.00 from the
-  // server) rather than producing $1.520 here.
-  function formatCurrency(value) {
-    return '$' + Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  }
+//   // Still the mockup's formatter. When checkout is ported this has to follow
+//   // the storefront convention the cart now uses (L. 1,520.00 from the
+//   // server) rather than producing $1.520 here.
+//   function formatCurrency(value) {
+//     return '$' + Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+//   }
 
 
-  // Payment method cards
-  const paymentCards = document.querySelectorAll('.payment-method-card');
-  const cardFieldsExtra = document.getElementById('cardFieldsExtra');
-  paymentCards.forEach(function (card) {
-    const radio = card.querySelector('input[type="radio"]');
-    card.addEventListener('click', function () {
-      paymentCards.forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      radio.checked = true;
-      if (cardFieldsExtra) {
-        cardFieldsExtra.style.display = radio.value === 'card' ? '' : 'none';
-      }
-    });
-  });
+//   // Payment method cards
+//   const paymentCards = document.querySelectorAll('.payment-method-card');
+//   const cardFieldsExtra = document.getElementById('cardFieldsExtra');
+//   paymentCards.forEach(function (card) {
+//     const radio = card.querySelector('input[type="radio"]');
+//     card.addEventListener('click', function () {
+//       paymentCards.forEach(c => c.classList.remove('selected'));
+//       card.classList.add('selected');
+//       radio.checked = true;
+//       if (cardFieldsExtra) {
+//         cardFieldsExtra.style.display = radio.value === 'card' ? '' : 'none';
+//       }
+//     });
+//   });
 
-  // Shipping method + live total recalculation
-  const shippingOptions = document.querySelectorAll('.shipping-method-option');
-  function recalcCheckoutTotal() {
-    const subtotalEl = document.getElementById('checkoutSubtotal');
-    const shippingEl = document.getElementById('checkoutShippingCost');
-    const totalEl = document.getElementById('checkoutTotal');
-    if (!subtotalEl || !shippingEl || !totalEl) return;
-    const subtotal = parseFloat(subtotalEl.getAttribute('data-value')) || 0;
-    const selected = document.querySelector('.shipping-method-option input[type="radio"]:checked');
-    const shippingCost = selected ? (parseFloat(selected.getAttribute('data-cost')) || 0) : 0;
-    shippingEl.textContent = shippingCost === 0 ? 'Gratis' : formatCurrency(shippingCost);
-    totalEl.textContent = formatCurrency(subtotal + shippingCost);
-  }
-  shippingOptions.forEach(function (option) {
-    const radio = option.querySelector('input[type="radio"]');
-    option.addEventListener('click', function () {
-      shippingOptions.forEach(o => o.classList.remove('selected'));
-      option.classList.add('selected');
-      radio.checked = true;
-      recalcCheckoutTotal();
-    });
-  });
-  recalcCheckoutTotal();
+//   // Shipping method + live total recalculation
+//   const shippingOptions = document.querySelectorAll('.shipping-method-option');
+//   function recalcCheckoutTotal() {
+//     const subtotalEl = document.getElementById('checkoutSubtotal');
+//     const shippingEl = document.getElementById('checkoutShippingCost');
+//     const totalEl = document.getElementById('checkoutTotal');
+//     if (!subtotalEl || !shippingEl || !totalEl) return;
+//     const subtotal = parseFloat(subtotalEl.getAttribute('data-value')) || 0;
+//     const selected = document.querySelector('.shipping-method-option input[type="radio"]:checked');
+//     const shippingCost = selected ? (parseFloat(selected.getAttribute('data-cost')) || 0) : 0;
+//     shippingEl.textContent = shippingCost === 0 ? 'Gratis' : formatCurrency(shippingCost);
+//     totalEl.textContent = formatCurrency(subtotal + shippingCost);
+//   }
+//   shippingOptions.forEach(function (option) {
+//     const radio = option.querySelector('input[type="radio"]');
+//     option.addEventListener('click', function () {
+//       shippingOptions.forEach(o => o.classList.remove('selected'));
+//       option.classList.add('selected');
+//       radio.checked = true;
+//       recalcCheckoutTotal();
+//     });
+//   });
+//   recalcCheckoutTotal();
 
-  // Submit handling (front-end only for now — no backend yet)
-  checkoutForm.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!checkoutForm.checkValidity()) {
-      checkoutForm.classList.add('was-validated');
-      const firstInvalid = checkoutForm.querySelector(':invalid');
-      if (firstInvalid) firstInvalid.focus();
-      return;
-    }
-    const submitBtn = document.getElementById('placeOrderBtn');
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Procesando pedido...';
-    }
-    setTimeout(function () {
-      window.location.href = 'verificar-pedido.html';
-    }, 900);
-  });
-}
+//   // Submit handling (front-end only for now — no backend yet)
+//   checkoutForm.addEventListener('submit', function (e) {
+//     e.preventDefault();
+//     if (!checkoutForm.checkValidity()) {
+//       checkoutForm.classList.add('was-validated');
+//       const firstInvalid = checkoutForm.querySelector(':invalid');
+//       if (firstInvalid) firstInvalid.focus();
+//       return;
+//     }
+//     const submitBtn = document.getElementById('placeOrderBtn');
+//     if (submitBtn) {
+//       submitBtn.disabled = true;
+//       submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Procesando pedido...';
+//     }
+//     setTimeout(function () {
+//       window.location.href = 'verificar-pedido.html';
+//     }, 900);
+//   });
+// }
 
 // OTP verification page (verificar-pedido.html)
 const otpForm = document.getElementById('otpForm');
