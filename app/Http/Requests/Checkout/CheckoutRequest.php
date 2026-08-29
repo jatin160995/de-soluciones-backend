@@ -33,38 +33,154 @@ class CheckoutRequest extends FormRequest
      */
     public function rules(): array
     {
+        /*
+     * A logged-in customer can either:
+     *
+     * 1. Select one of their saved addresses -> address_id is present
+     * 2. Enter a new address manually -> address_id is empty
+     *
+     * When address_id is present, the manual address fields are not required
+     * because CheckoutService will load the selected saved address.
+     */
+        $hasSavedAddress = $this->filled('address_id');
+
         return [
-            'customer_name'     => ['required', 'string', 'max:150'],
-            'customer_phone'    => ['required', 'string', 'max:30'],
-            'whatsapp_number'   => ['required', 'string', 'max:30'],
-            'alternate_phone'   => ['nullable', 'string', 'max:30'],
-            'customer_email'    => ['nullable', 'email', 'max:150'],
+            'customer_name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
 
-            'recipient_name'    => ['required', 'string', 'max:150'],
-            'label'             => ['nullable', 'string', 'max:40'],
-            'line1'             => ['required', 'string', 'max:255'],
-            'line2'             => ['required', 'string', 'max:255'],
-            'city'              => ['required', 'string', 'max:120'],
-            'state'             => ['required', 'string', 'max:120'],
-            'postal_code'       => ['nullable', 'string', 'max:20'],
-            'country'           => ['required', 'string', 'max:120'],
+            'customer_phone' => [
+                'required',
+                'string',
+                'max:30',
+            ],
 
-            'shipping_method'   => ['required', Rule::in(['standard', 'express'])],
-            'preferred_courier' => ['nullable', Rule::in(['', 'c807', 'cargo_expreso', 'forza_delivery'])],
+            'whatsapp_number' => [
+                'required',
+                'string',
+                'max:30',
+            ],
 
-            'payment_method'    => [
+            'alternate_phone' => [
+                'nullable',
+                'string',
+                'max:30',
+            ],
+
+            'customer_email' => [
+                'nullable',
+                'email',
+                'max:150',
+            ],
+
+            /*
+         * Saved address.
+         */
+            'address_id' => [
+                'nullable',
+                'integer',
+            ],
+
+            /*
+         * Manual address fields.
+         *
+         * Required only when the customer is NOT using a saved address.
+         */
+            'recipient_name' => [
+                $hasSavedAddress ? 'nullable' : 'required',
+                'string',
+                'max:150',
+            ],
+
+            'label' => [
+                'nullable',
+                'string',
+                'max:40',
+            ],
+
+            'line1' => [
+                $hasSavedAddress ? 'nullable' : 'required',
+                'string',
+                'max:255',
+            ],
+
+            'line2' => [
+                $hasSavedAddress ? 'nullable' : 'required',
+                'string',
+                'max:255',
+            ],
+
+            'city' => [
+                $hasSavedAddress ? 'nullable' : 'required',
+                'string',
+                'max:120',
+            ],
+
+            'state' => [
+                $hasSavedAddress ? 'nullable' : 'required',
+                'string',
+                'max:120',
+            ],
+
+            'postal_code' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+
+            'country' => [
+                'required',
+                'string',
+                'max:120',
+            ],
+
+            /*
+         * Shipping.
+         */
+            'shipping_method' => [
+                'required',
+                Rule::in(['standard', 'express']),
+            ],
+
+            'preferred_courier' => [
+                'nullable',
+                Rule::in([
+                    '',
+                    'c807',
+                    'cargo_expreso',
+                    'forza_delivery',
+                ]),
+            ],
+
+            /*
+         * M3 = COD only.
+         */
+            'payment_method' => [
                 'required',
                 Rule::in(['cod']),
             ],
 
-            'coupon_code'       => ['nullable', 'string', 'max:50'],
-            'notes'             => ['nullable', 'string', 'max:500'],
-            'accept_terms'      => ['accepted'],
+            'coupon_code' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
 
-            // Only meaningful for a logged-in shopper; the controller ignores
-            // both for guests regardless of what's posted.
-            'save_address'      => ['boolean'],
-            'address_id'        => ['nullable', 'integer'],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
+            'accept_terms' => [
+                'accepted',
+            ],
+
+            'save_address' => [
+                'boolean',
+            ],
         ];
     }
 

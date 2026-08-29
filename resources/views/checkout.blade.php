@@ -54,11 +54,22 @@
       </div>
     </div>
 
-    @error('checkout')
+    {{-- @error('checkout')
       <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-exclamation-triangle-fill"></i> {{ $message }}
       </div>
-    @enderror
+    @enderror --}}
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <strong>Hay errores en el formulario:</strong>
+
+        <ul class="mb-0 mt-2">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
     <form id="checkoutForm" class="checkout-form" action="{{ route('checkout.store') }}" method="POST">
       @csrf
